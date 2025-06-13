@@ -408,10 +408,11 @@ button:hover {
   flex-wrap: wrap; /* 折り返しを有効にする */
   justify-content: center;
   gap: 8px; /* ボタン間の隙間 */
-  margin: 20px auto;
   max-width: 90%;
   transition: max-height 0.3s ease-out, opacity 0.3s ease-out;
   overflow: hidden;
+  margin-top: 35px;
+  margin-bottom: 35px;
 }
 
 #tags-container.hidden {
