@@ -149,6 +149,53 @@ function displayResults(images) {
   });
 }
 
+async function loadCarousel() {
+  const carousel = document.getElementById("carousel");
+  if (!carousel) return;
+
+  // カルーセル内の画像を横並びで入れるdivを作成
+  const inner = document.createElement("div");
+  inner.className = "carousel-inner";
+  carousel.appendChild(inner);
+
+  try {
+    const res = await fetch("/gallery-data");
+    if (!res.ok) throw new Error("カルーセル画像取得失敗");
+    const data = await res.json();
+
+    if (!Array.isArray(data.posts) || data.posts.length === 0) return;
+
+    // ランダムに5枚を選択
+    const shuffled = data.posts.sort(() => 0.5 - Math.random());
+    const selected = shuffled.slice(0, 5);
+
+    selected.forEach((item) => {
+      let imgUrl = item.imageUrls[0];
+      if (imgUrl.includes("/upload/")) {
+        imgUrl = imgUrl.replace("/upload/", "/upload/w_600,h_400,c_fill/");
+      }
+
+      const img = document.createElement("img");
+      img.src = imgUrl;
+      img.alt = item.tags.length ? item.tags.join(", ") : "carousel image";
+
+      inner.appendChild(img);
+    });
+
+    // スライド制御
+    let index = 0;
+    setInterval(() => {
+      index = (index + 1) % selected.length;
+      inner.style.transform = `translateX(-${index * 600}px)`;
+    }, 3000);
+  } catch (err) {
+    console.error(err);
+    carousel.textContent = "画像の読み込みに失敗しました";
+  }
+}
+
+window.addEventListener("DOMContentLoaded", loadCarousel);
+
 // ページ初期読み込み
 loadTags();
 loadGallery();
