@@ -41,8 +41,8 @@
         <div class="modal-content">
           <h3>Edit</h3>
           <textarea id="tagEditorInput" rows="3" style="width: 100%"></textarea>
-            <button id="tagEditorSaveBtn">Save</button>
-            <button id="tagEditorCancelBtn">Cancel</button>
+          <button id="tagEditorSaveBtn">Save</button>
+          <button id="tagEditorCancelBtn">Cancel</button>
         </div>
       </div>
     </div>
@@ -301,22 +301,39 @@
         editingPost = null;
       }
 
-      // 保存ボタン
-      function saveTags() {
+      // 保存ボタン（タグ更新APIを呼ぶ）
+      async function saveTags() {
         if (!editingPost) return;
+
         const newTags = tagEditorInput.value
           .split(",")
           .map((t) => t.trim())
           .filter((t) => t.length > 0);
-        editingPost.tags = newTags;
-        alert("タグを更新しました: " + newTags.join(", "));
-        closeTagEditor();
 
-        // 必要ならここでサーバーへ更新APIを呼ぶなど
-        // 例: await fetch('/update-tags', { method: 'POST', body: JSON.stringify({ id: editingPost.id, tags: newTags }) });
+        try {
+          const res = await fetch("/update-tags", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              id: editingPost.id,
+              tags: newTags.join(","),
+            }),
+          });
 
-        // UI反映のため再描画も検討
-        loadGallery(currentPage);
+          if (!res.ok) {
+            const text = await res.text();
+            throw new Error(text || "タグ更新に失敗しました");
+          }
+
+          editingPost.tags = newTags; // ローカル更新
+          alert("タグを更新しました: " + newTags.join(", "));
+          closeTagEditor();
+          loadGallery(currentPage); // UIを再読み込み
+        } catch (error) {
+          alert(error.message);
+        }
       }
 
       window.onload = async () => {
