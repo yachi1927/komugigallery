@@ -21,8 +21,6 @@ cloudinary.config({
 });
 
 // MongoDB設定
-const { MongoClient } = require("mongodb");
-
 const uri = process.env.MONGODB_URI;
 const client = new MongoClient(uri);
 
@@ -30,7 +28,7 @@ async function connectDB() {
   try {
     await client.connect();
     console.log("MongoDB connected");
-    return client.db("your-db-name"); // 適宜置き換えてください
+    return client.db(process.env.MONGODB_DB_NAME); // .envで設定したDB名を使用
   } catch (err) {
     console.error("MongoDB connection error:", err);
     throw err;
@@ -48,10 +46,12 @@ const upload = multer({ storage });
 // 画像アップロード
 app.post("/upload", upload.array("images", 10), async (req, res) => {
   try {
-    await connectDB();
-
+    const db = await connectDB();
     const tags = req.body.tags
-      ? req.body.tags.split(",").map((t) => t.trim()).filter(Boolean)
+      ? req.body.tags
+          .split(",")
+          .map((t) => t.trim())
+          .filter(Boolean)
       : [];
 
     if (!req.files || req.files.length === 0) {
@@ -92,10 +92,10 @@ app.post("/upload", upload.array("images", 10), async (req, res) => {
   }
 });
 
-// ギャラリー用データ取得
+// ギャラリーデータ取得
 app.get("/gallery-data", async (req, res) => {
   try {
-    await connectDB();
+    const db = await connectDB();
     const collection = db.collection("images");
     const data = await collection.find().sort({ createdAt: -1 }).toArray();
     res.json(data);
@@ -108,11 +108,11 @@ app.get("/gallery-data", async (req, res) => {
 // タグ一覧取得
 app.get("/tags", async (req, res) => {
   try {
-    await connectDB();
+    const db = await connectDB();
     const collection = db.collection("images");
     const allDocs = await collection.find({}, { projection: { tags: 1 } }).toArray();
     const allTagsSet = new Set();
-    allDocs.forEach(doc => doc.tags.forEach(tag => allTagsSet.add(tag)));
+    allDocs.forEach((doc) => doc.tags.forEach((tag) => allTagsSet.add(tag)));
     res.json(Array.from(allTagsSet));
   } catch (error) {
     console.error(error);
@@ -123,13 +123,15 @@ app.get("/tags", async (req, res) => {
 // タグ検索
 app.get("/search", async (req, res) => {
   try {
-    await connectDB();
+    const db = await connectDB();
     const keyword = (req.query.tag || "").toLowerCase();
     const collection = db.collection("images");
 
-    const data = await collection.find({
-      tags: { $elemMatch: { $regex: keyword, $options: "i" } },
-    }).toArray();
+    const data = await collection
+      .find({
+        tags: { $elemMatch: { $regex: keyword, $options: "i" } },
+      })
+      .toArray();
 
     res.json(data);
   } catch (error) {
@@ -141,21 +143,25 @@ app.get("/search", async (req, res) => {
 // タグ更新
 app.post("/update-tags", async (req, res) => {
   try {
-    await connectDB();
+    const db = await connectDB();
     const { id, tags } = req.body;
     if (!id || !tags) {
       return res.status(400).send("IDとタグが必要です");
     }
 
     const collection = db.collection("images");
-    const newTags = tags.split(",").map((t) => t.trim()).filter(Boolean);
+    const newTags = tags
+      .split(",")
+      .map((t) => t.trim())
+      .filter(Boolean);
 
     const result = await collection.updateOne(
       { _id: new ObjectId(id) },
       { $set: { tags: newTags } }
     );
 
-    if (result.matchedCount === 0) return res.status(404).send("投稿が見つかりません");
+    if (result.matchedCount === 0)
+      return res.status(404).send("投稿が見つかりません");
 
     res.json({ success: true });
   } catch (error) {
@@ -167,17 +173,28 @@ app.post("/update-tags", async (req, res) => {
 // タグカテゴリー取得
 app.get("/tag-categories", async (req, res) => {
   try {
-    await connectDB();
+    const db = await connectDB();
     const collection = db.collection("images");
     const allDocs = await collection.find({}, { projection: { tags: 1 } }).toArray();
     const allTagsSet = new Set();
-    allDocs.forEach(doc => doc.tags.forEach(tag => allTagsSet.add(tag)));
+    allDocs.forEach((doc) => doc.tags.forEach((tag) => allTagsSet.add(tag)));
     const tagsArray = Array.from(allTagsSet);
 
     const categoryRules = {
       CP: ["akiz", "hiar", "szak", "kmkt"],
-      Character: ["izumi", "akiyoshi", "aruwo", "hisanobu", "akiko", "suzui", "kotori", "kumaki"],
-      Date: tagsArray.filter(tag => /\d{4}\/\d{2}/.test(tag) || /\d{4}年/.test(tag)),
+      Character: [
+        "izumi",
+        "akiyoshi",
+        "aruwo",
+        "hisanobu",
+        "akiko",
+        "suzui",
+        "kotori",
+        "kumaki",
+      ],
+      Date: tagsArray.filter(
+        (tag) => /\d{4}\/\d{2}/.test(tag) || /\d{4}年/.test(tag)
+      ),
     };
 
     function categorizeTags(tags, rules) {
