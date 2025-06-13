@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link href="style.css" rel="stylesheet" type="text/css" />
-        <link
+    <link
       rel="shortcut icon"
       href="https://lh3.googleusercontent.com/pw/AP1GczPcJnyP0x_e-ArxvuH50PLBFqGn4dq7pzgJfQN0_cF0OxTV7zMig3DPR8dH5ccuGHR2bITDWkDXbW6BYiMV5s87goBdnS2bXSqx7ALgkwtD-f46vx9tOGUBEGpTKfPacQvSBc9OCO3yWIsiINsMidMbFA=w512-h512-s-no-gm?authuser=0"
     />
@@ -36,6 +36,17 @@
           </button>
         </div>
       </div>
+
+      <div id="tagEditorModal" class="modal">
+        <div class="modal-content">
+          <h3>タグ編集</h3>
+          <textarea id="tagEditorInput" rows="3" style="width: 100%"></textarea>
+          <div style="margin-top: 10px; text-align: right">
+            <button id="tagEditorSaveBtn">保存</button>
+            <button id="tagEditorCancelBtn">キャンセル</button>
+          </div>
+        </div>
+      </div>
     </div>
 
     <script>
@@ -50,6 +61,13 @@
       let nextBtn = null;
       let currentSlide = 0;
       let currentImages = [];
+
+      // --- タグ編集モーダル用要素 ---
+      let tagEditorModal = null;
+      let tagEditorInput = null;
+      let tagEditorSaveBtn = null;
+      let tagEditorCancelBtn = null;
+      let editingPost = null; // 現在編集中のpost
 
       // URLからtagパラメータを取得
       function getTagFromURL() {
@@ -118,6 +136,7 @@
       }
 
       // 画像をカード形式で表示、クリックでモーダルを開く
+      // 【縦3点リーダーボタンも追加】
       function displayImages(posts) {
         const gallery = document.getElementById("gallery");
         gallery.innerHTML = "";
@@ -139,7 +158,18 @@
             openModal(post.imageUrls);
           });
 
+          // 縦3点リーダーボタン作成
+          const menuBtn = document.createElement("button");
+          menuBtn.className = "menu-btn";
+          menuBtn.textContent = "︙";
+          // クリックイベント（画像クリックイベントに影響しないようstopPropagation）
+          menuBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            openTagEditor(post);
+          });
+
           card.appendChild(img);
+          card.appendChild(menuBtn);
           gallery.appendChild(card);
         });
       }
@@ -251,6 +281,39 @@
         }
       }
 
+      // ------------- タグ編集モーダルの制御 ---------------
+
+      // モーダルを開く（postオブジェクトを渡す）
+      function openTagEditor(post) {
+        editingPost = post;
+        tagEditorInput.value = post.tags.join(", ");
+        tagEditorModal.classList.add("active");
+      }
+
+      // モーダルを閉じる
+      function closeTagEditor() {
+        tagEditorModal.classList.remove("active");
+        editingPost = null;
+      }
+
+      // 保存ボタン
+      function saveTags() {
+        if (!editingPost) return;
+        const newTags = tagEditorInput.value
+          .split(",")
+          .map((t) => t.trim())
+          .filter((t) => t.length > 0);
+        editingPost.tags = newTags;
+        alert("タグを更新しました: " + newTags.join(", "));
+        closeTagEditor();
+
+        // 必要ならここでサーバーへ更新APIを呼ぶなど
+        // 例: await fetch('/update-tags', { method: 'POST', body: JSON.stringify({ id: editingPost.id, tags: newTags }) });
+
+        // UI反映のため再描画も検討
+        loadGallery(currentPage);
+      }
+
       window.onload = async () => {
         selectedTag = getTagFromURL();
         currentPage = getPageFromURL();
@@ -264,13 +327,28 @@
         prevBtn = document.getElementById("prevBtn");
         nextBtn = document.getElementById("nextBtn");
 
+        // タグ編集モーダル要素取得
+        tagEditorModal = document.getElementById("tagEditorModal");
+        tagEditorInput = document.getElementById("tagEditorInput");
+        tagEditorSaveBtn = document.getElementById("tagEditorSaveBtn");
+        tagEditorCancelBtn = document.getElementById("tagEditorCancelBtn");
+
         modalCloseBtn.addEventListener("click", closeModal);
         prevBtn.addEventListener("click", showPrev);
         nextBtn.addEventListener("click", showNext);
 
+        tagEditorSaveBtn.addEventListener("click", saveTags);
+        tagEditorCancelBtn.addEventListener("click", closeTagEditor);
+
+        // モーダル外クリックでタグ編集モーダル閉じる
+        tagEditorModal.addEventListener("click", (e) => {
+          if (e.target === tagEditorModal) closeTagEditor();
+        });
+
         window.addEventListener("keydown", (e) => {
-          if (e.key === "Escape" && modal.classList.contains("active")) {
-            closeModal();
+          if (e.key === "Escape") {
+            if (modal.classList.contains("active")) closeModal();
+            if (tagEditorModal.classList.contains("active")) closeTagEditor();
           }
         });
       };
