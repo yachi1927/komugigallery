@@ -156,8 +156,8 @@ app.get("/tag-categories", (req, res) => {
 
   // カテゴリ分類ルール
   const categoryRules = {
-    CP: ["akiz", "hiar", "szak"],
-    Character: ["izumi", "akiyoshi", "aruwo", "hisanobu", "akiko", "suzui"],
+    CP: ["akiz", "hiar", "szak","kmkt"],
+    Character: ["izumi", "akiyoshi", "aruwo", "hisanobu", "akiko", "suzui","kotori","kumaki"],
     Date: tagsArray.filter(
       (tag) => /\d{4}\/\d{2}/.test(tag) || /\d{4}年/.test(tag)
     ),
