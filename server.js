@@ -31,7 +31,7 @@ async function connectDB() {
     try {
       await client.connect();
       console.log("MongoDB connected");
-      dbInstance = client.db(process.env.MONGODB_DB_NAME); // 一度だけ接続
+      dbInstance = client.db(process.env.MONGODB_DB_NAME);
     } catch (err) {
       console.error("MongoDB connection error:", err);
       throw err;
@@ -39,6 +39,7 @@ async function connectDB() {
   }
   return dbInstance;
 }
+
 app.use(cors());
 app.use(express.static(path.join(__dirname, "public")));
 app.use(express.json());
@@ -96,7 +97,7 @@ app.post("/upload", upload.array("images", 10), async (req, res) => {
   }
 });
 
-// ギャラリーデータ取得
+// 修正済み ギャラリーデータ取得（タグ絞り込み対応）
 app.get("/gallery-data", async (req, res) => {
   try {
     const db = await connectDB();
@@ -106,9 +107,16 @@ app.get("/gallery-data", async (req, res) => {
     const limit = 10;
     const skip = (page - 1) * limit;
 
-    const totalCount = await collection.countDocuments();
+    // タグ絞り込み条件
+    let filter = {};
+    if (req.query.tag) {
+      // 部分一致かつ大文字小文字無視でタグに一致するものを検索
+      filter.tags = { $elemMatch: { $regex: req.query.tag, $options: "i" } };
+    }
+
+    const totalCount = await collection.countDocuments(filter);
     const data = await collection
-      .find()
+      .find(filter)
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
@@ -148,7 +156,7 @@ async function loadGallery(page = 1) {
   }
 }
 
-// タグ一覧取得
+// 以下、元コードのまま
 app.get("/tags", async (req, res) => {
   try {
     const db = await connectDB();
@@ -165,7 +173,6 @@ app.get("/tags", async (req, res) => {
   }
 });
 
-// タグ検索
 app.get("/search", async (req, res) => {
   try {
     const db = await connectDB();
@@ -177,13 +184,12 @@ app.get("/search", async (req, res) => {
 
     const collection = db.collection("images");
 
-    // タグがkeywordに部分一致するものを取得（大文字小文字無視）
     const data = await collection
       .find({
         tags: { $elemMatch: { $regex: keyword, $options: "i" } },
       })
       .sort({ createdAt: -1 })
-      .limit(10)  // ページングも追加可能
+      .limit(10)
       .toArray();
 
     const formatted = data.map((doc) => ({
@@ -199,7 +205,7 @@ app.get("/search", async (req, res) => {
     res.status(500).send("検索に失敗しました");
   }
 });
-// タグ更新
+
 app.post("/update-tags", async (req, res) => {
   try {
     const db = await connectDB();
@@ -229,7 +235,6 @@ app.post("/update-tags", async (req, res) => {
   }
 });
 
-// タグカテゴリー取得
 app.get("/tag-categories", async (req, res) => {
   try {
     const db = await connectDB();
