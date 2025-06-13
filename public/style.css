@@ -258,36 +258,24 @@ button:hover {
 }
 
 .carousel-container {
-  width: 800px;        /* 好きな幅 */
+  width: 100%;
+  max-width: 600px;
   overflow: hidden;
   margin: 0 auto;
   border: 1px solid #ccc;
   border-radius: 8px;
 }
 
-@media (max-width: 600px) {
-  .carousel-container {
-    width: auto;
-  }
-}
-
 .carousel {
   display: flex;
   transition: transform 0.5s ease-in-out;
-  width: max-content;  /* 横幅は画像の幅合計 */
+  width: max-content; /* 横幅は画像の幅合計 */
 }
 
 .carousel img {
-  width: 800px; /* containerの幅に合わせる */
+  width: 100%; /* containerの幅に合わせる */
   flex-shrink: 0;
 }
-
-@media (max-width: 600px) {
-  .carousel img {
-    width: auto;
-  }
-}
-
 
 /* ページネーションの親 */
 .pagination {
@@ -309,7 +297,7 @@ button:hover {
   transition: background-color 0.2s, color 0.2s;
   margin-top: 20px;
   margin-bottom: 20px;
-  padding-top: 20px;    /* 上の余白をpaddingで追加 */
+  padding-top: 20px; /* 上の余白をpaddingで追加 */
   padding-bottom: 20px; /* 下も同様 */
 }
 
@@ -327,38 +315,38 @@ button:hover {
 }
 
 .category {
-    margin-bottom: 10px;
-  }
+  margin-bottom: 10px;
+}
 
-  .category-toggle {
-    width: 100%;
-    text-align: left;
-    background-color: #747481;
-    border: none;
-    padding: 10px;
-    cursor: pointer;
-    border-radius: 6px;
-  }
+.category-toggle {
+  width: 100%;
+  text-align: left;
+  background-color: #747481;
+  border: none;
+  padding: 10px;
+  cursor: pointer;
+  border-radius: 6px;
+}
 
-  .tag-list {
-    padding: 10px;
-    display: none;
-    background-color: #fafafa;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    margin-top: 5px;
-  }
+.tag-list {
+  padding: 10px;
+  display: none;
+  background-color: #fafafa;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  margin-top: 5px;
+}
 
-  .tag-list.open {
-    display: block;
-  }
+.tag-list.open {
+  display: block;
+}
 
-  .tag {
-    display: inline-block;
-    margin: 4px;
-    padding: 6px 10px;
-    background-color: #afb2c4;
-    border-radius: 20px;
-    font-size: 14px;
-    cursor: pointer;
-  }
+.tag {
+  display: inline-block;
+  margin: 4px;
+  padding: 6px 10px;
+  background-color: #afb2c4;
+  border-radius: 20px;
+  font-size: 14px;
+  cursor: pointer;
+}
