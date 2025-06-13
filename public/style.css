@@ -351,7 +351,6 @@ button:hover {
 .pagination {
   display: flex;
   gap: 8px;
-  flex-wrap: wrap;
   margin-top: 40px;
   margin-bottom: 40px;
 }
