@@ -64,8 +64,7 @@
               const tagLink = document.createElement("a");
               tagLink.className = "tag";
               tagLink.textContent = tag;
-              tagLink.href = "#"; // 遷移しないように #
-              tagLink.dataset.tag = tag; // data属性に保持
+              tagLink.href = `/gallery.html?tag=${encodeURIComponent(tag)}`; // ここを修正
               tagList.appendChild(tagLink);
             });
 
@@ -79,7 +78,6 @@
           }
 
           // タグクリックのイベント設定
-          addTagClickHandlers();
         } catch (err) {
           container.textContent = err.message;
           console.error(err);

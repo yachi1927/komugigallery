@@ -26,6 +26,30 @@
       let currentPage = 1;
       let totalPages = 1;
 
+      // URLからtagパラメータを取得
+      function getTagFromURL() {
+        const params = new URLSearchParams(window.location.search);
+        return params.get("tag");
+      }
+
+      // URLからpageパラメータを取得
+      function getPageFromURL() {
+        const params = new URLSearchParams(window.location.search);
+        const p = parseInt(params.get("page"), 10);
+        return isNaN(p) || p < 1 ? 1 : p;
+      }
+
+      // URLのqueryパラメータを書き換え（履歴に追加）
+      function updateURL() {
+        const params = new URLSearchParams();
+        if (selectedTag) params.set("tag", selectedTag);
+        if (currentPage > 1) params.set("page", currentPage);
+        const newUrl =
+          window.location.pathname +
+          (params.toString() ? `?${params.toString()}` : "");
+        history.pushState(null, "", newUrl);
+      }
+
       // タグ取得してボタン表示
       async function loadTags() {
         try {
@@ -41,10 +65,10 @@
             btn.className = "tag-btn";
             btn.textContent = tag;
             btn.addEventListener("click", () => {
-              // 同じタグが選択されていれば解除、違えば選択し直し
               selectedTag = selectedTag === tag ? null : tag;
               currentPage = 1;
               updateTagButtons();
+              updateURL();
               loadGallery(currentPage);
             });
             container.appendChild(btn);
@@ -104,6 +128,7 @@
         prevBtn.onclick = () => {
           if (currentPage > 1) {
             currentPage--;
+            updateURL();
             loadGallery(currentPage);
           }
         };
@@ -119,6 +144,7 @@
         nextBtn.onclick = () => {
           if (currentPage < totalPages) {
             currentPage++;
+            updateURL();
             loadGallery(currentPage);
           }
         };
@@ -145,9 +171,20 @@
         }
       }
 
-      window.onload = () => {
-        loadTags();
-        loadGallery();
+      window.onload = async () => {
+        selectedTag = getTagFromURL();
+        currentPage = getPageFromURL();
+        await loadTags();
+        updateTagButtons();
+        loadGallery(currentPage);
+      };
+
+      // ブラウザの戻る進むでURLが変わったときも対応したい場合は以下追加可能
+      window.onpopstate = () => {
+        selectedTag = getTagFromURL();
+        currentPage = getPageFromURL();
+        updateTagButtons();
+        loadGallery(currentPage);
       };
     </script>
   </body>
