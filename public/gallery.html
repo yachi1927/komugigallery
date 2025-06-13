@@ -37,130 +37,113 @@
     </div>
 
     <script>
-      const gallery = document.getElementById("gallery");
-      const modal = document.getElementById("modal");
-      const modalContent = document.getElementById("modalContent");
-      const closeBtn = document.getElementById("closeBtn");
+const gallery = document.getElementById("gallery");
+const modal = document.getElementById("modal");
+const modalContent = document.getElementById("modalContent");
+const closeBtn = document.getElementById("closeBtn");
 
-      // クエリからタグを取得
-      const params = new URLSearchParams(location.search);
-      const tag = params.get("tag");
+// クエリからタグを取得
+const params = new URLSearchParams(location.search);
+const tag = params.get("tag");
+const highlightId = params.has("id") ? Number(params.get("id")) : null;
 
-      const endpoint = tag
-        ? `/search?tag=${encodeURIComponent(tag)}`
-        : "/gallery-data";
+// 取得先を条件分岐
+const endpoint = tag
+  ? `/search?tag=${encodeURIComponent(tag)}`
+  : "/gallery-data";
 
-      fetch(endpoint)
-        .then((res) => res.json())
-        .then((data) => {
-          data.reverse().forEach((post) => {
-            const div = document.createElement("div");
-            div.className = "post";
+// 画像一覧取得＆表示関数
+function renderGallery(data) {
+  gallery.innerHTML = ""; // いったんクリア
+  data.reverse().forEach((post) => {
+    const div = document.createElement("div");
+    div.className = "post";
 
-            const thumb = document.createElement("img");
-            thumb.src = post.imageUrls[0];
-            thumb.alt = post.tags.join(", ");
-            div.appendChild(thumb);
+    if (highlightId && post.id === highlightId) {
+      div.classList.add("highlight");
+      setTimeout(() => div.scrollIntoView({ behavior: "smooth", block: "center" }), 100);
+    }
 
-            // タグ（非表示にしたいならこのブロックはスキップしてOK）
-            const tagsDiv = document.createElement("div");
-            tagsDiv.className = "post-tags";
-            post.tags.forEach((tag) => {
-              const span = document.createElement("span");
-              span.className = "tag";
-              span.textContent = tag;
-              tagsDiv.appendChild(span);
-            });
-            div.appendChild(tagsDiv);
+    const thumb = document.createElement("img");
+    thumb.src = post.imageUrls[0];
+    thumb.alt = post.tags.join(", ") || "uploaded image";
+    div.appendChild(thumb);
 
-            // 編集ボタン（必要なら）
-            const editBtn = document.createElement("button");
-            editBtn.textContent = "Edit";
-            editBtn.addEventListener("click", () => {
-              const newTags = prompt(
-                "新しいタグ（カンマ区切り）",
-                post.tags.join(", ")
-              );
-              if (newTags !== null) {
-                updateTags(post.id, newTags);
-              }
-            });
-            div.appendChild(editBtn);
+    // タグ表示（不要ならこのブロックごと削除OK）
+    const tagsDiv = document.createElement("div");
+    tagsDiv.className = "post-tags";
+    post.tags.forEach((t) => {
+      const span = document.createElement("span");
+      span.className = "tag";
+      span.textContent = t;
+      tagsDiv.appendChild(span);
+    });
+    div.appendChild(tagsDiv);
 
-            gallery.appendChild(div);
-
-            // モーダル表示処理
-            div.addEventListener("click", () => {
-              modalContent.innerHTML = "";
-              post.imageUrls.forEach((url) => {
-                const img = document.createElement("img");
-                img.src = url;
-                modalContent.appendChild(img);
-              });
-              modal.style.display = "flex";
-            });
-          });
-        });
-
-      // モーダル閉じる
-      closeBtn.addEventListener("click", () => {
-        modal.style.display = "none";
-      });
-
-      modal.addEventListener("click", (e) => {
-        if (e.target === modal) {
-          modal.style.display = "none";
-        }
-      });
-
-      // タグ更新関数
-      function updateTags(id, newTags) {
-        fetch("/update-tags", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ id, tags: newTags }),
-        })
-          .then((res) => {
-            if (!res.ok) throw new Error("更新に失敗しました");
-            return res.json();
-          })
-          .then(() => {
-            alert("タグを更新しました");
-            location.reload(); // ページをリロード
-          })
-          .catch((err) => {
-            console.error(err);
-            alert("タグ更新に失敗しました");
-          });
+    // 編集ボタン
+    const editBtn = document.createElement("button");
+    editBtn.textContent = "Edit";
+    editBtn.addEventListener("click", (e) => {
+      e.stopPropagation(); // 編集クリックでモーダル起動阻止
+      const newTags = prompt("新しいタグ（カンマ区切り）", post.tags.join(", "));
+      if (newTags !== null) {
+        updateTags(post.id, newTags);
       }
+    });
+    div.appendChild(editBtn);
 
-      fetch("/gallery-data")
-        .then((res) => res.json())
-        .then((data) => {
-          data.reverse().forEach((post) => {
-            const div = document.createElement("div");
-            div.className = "post";
+    // クリックでモーダル表示
+    div.addEventListener("click", () => {
+      modalContent.innerHTML = "";
+      post.imageUrls.forEach((url) => {
+        const img = document.createElement("img");
+        img.src = url;
+        modalContent.appendChild(img);
+      });
+      modal.style.display = "flex";
+    });
 
-            // もしクエリのidと一致すれば強調クラス付与など
-            if (post.id === highlightId) {
-              div.classList.add("highlight");
-              // 例えばスクロールして見せる
-              setTimeout(
-                () =>
-                  div.scrollIntoView({ behavior: "smooth", block: "center" }),
-                100
-              );
-            }
+    gallery.appendChild(div);
+  });
+}
 
-            const thumb = document.createElement("img");
-            thumb.src = post.imageUrls[0];
-            thumb.alt = post.tags.join(", ");
+// タグ更新関数
+function updateTags(id, newTags) {
+  fetch("/update-tags", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ id, tags: newTags }),
+  })
+    .then((res) => {
+      if (!res.ok) throw new Error("更新に失敗しました");
+      return res.json();
+    })
+    .then(() => {
+      alert("タグを更新しました");
+      location.reload();
+    })
+    .catch((err) => {
+      console.error(err);
+      alert("タグ更新に失敗しました");
+    });
+}
 
-            div.appendChild(thumb);
+// モーダル閉じる処理
+closeBtn.addEventListener("click", () => {
+  modal.style.display = "none";
+});
+modal.addEventListener("click", (e) => {
+  if (e.target === modal) modal.style.display = "none";
+});
 
-            gallery.appendChild(div);
-          });
-        });
+// 初期読み込みでデータ取得して表示
+fetch(endpoint)
+  .then((res) => res.json())
+  .then(renderGallery)
+  .catch((err) => {
+    console.error("画像データ取得失敗:", err);
+    gallery.textContent = "画像データの取得に失敗しました";
+  });
     </script>
   </body>
 </html>
