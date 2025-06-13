@@ -258,6 +258,7 @@ button:hover {
 }
 
 .carousel-container {
+  position: relative;
   width: 30%;
   margin: 20px auto;
   overflow: hidden;
