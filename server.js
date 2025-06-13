@@ -134,3 +134,6 @@ app.get('/tag-categories', (req, res) => {
 app.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);
 });
+
+const cors = require('cors');
+app.use(cors());
