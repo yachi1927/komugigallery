@@ -350,7 +350,6 @@ button:hover {
 /* ページネーションの親 */
 .pagination {
   display: flex;
-  justify-content: center;
   gap: 8px;
   flex-wrap: wrap;
   margin-top: 40px;

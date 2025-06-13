@@ -238,7 +238,7 @@
         if (totalPages <= 1) return;
 
         const prevBtn = document.createElement("button");
-        prevBtn.textContent = "前";
+        prevBtn.textContent = "Back";
         prevBtn.disabled = currentPage === 1;
         prevBtn.onclick = () => {
           if (currentPage > 1) {
@@ -254,7 +254,7 @@
         container.appendChild(info);
 
         const nextBtn = document.createElement("button");
-        nextBtn.textContent = "次";
+        nextBtn.textContent = "Next";
         nextBtn.disabled = currentPage === totalPages;
         nextBtn.onclick = () => {
           if (currentPage < totalPages) {

@@ -257,6 +257,7 @@ app.get("/tag-categories", async (req, res) => {
         "suzui",
         "kotori",
         "kumaki",
+        "rei",
       ],
       Date: tagsArray.filter(
         (tag) => /\d{4}\/\d{2}/.test(tag) || /\d{4}年/.test(tag)
