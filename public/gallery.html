@@ -29,6 +29,7 @@
       </header>
 
       <div id="gallery"></div>
+      <div id="pagination"></div>
 
       <div class="modal" id="modal">
         <div class="modal-content" id="modalContent"></div>
@@ -36,106 +37,136 @@
       </div>
     </div>
 
-<script>
-  const gallery = document.getElementById("gallery");
-  const modal = document.getElementById("modal");
-  const modalContent = document.getElementById("modalContent");
-  const closeBtn = document.getElementById("closeBtn");
+    <script>
+      const gallery = document.getElementById("gallery");
+      const modal = document.getElementById("modal");
+      const modalContent = document.getElementById("modalContent");
+      const closeBtn = document.getElementById("closeBtn");
 
-  const params = new URLSearchParams(location.search);
-  const tag = params.get("tag");
-  const highlightId = params.get("id"); // Number削除、文字列として扱う
+      const params = new URLSearchParams(location.search);
+      const tag = params.get("tag");
+      const highlightId = params.get("id"); // Number削除、文字列として扱う
 
-  const endpoint = tag
-    ? `/search?tag=${encodeURIComponent(tag)}`
-    : "/gallery-data";
+      const endpoint = tag
+        ? `/search?tag=${encodeURIComponent(tag)}`
+        : "/gallery-data";
 
-  function renderGallery(data) {
-    gallery.innerHTML = "";
+      function renderGallery(data) {
+        gallery.innerHTML = "";
 
-    data.reverse().forEach((post) => {
-      const div = document.createElement("div");
-      div.className = "post";
+        data.reverse().forEach((post) => {
+          const div = document.createElement("div");
+          div.className = "post";
 
-      if (highlightId && post.id === highlightId) {
-        div.classList.add("highlight");
-        setTimeout(() => div.scrollIntoView({ behavior: "smooth", block: "center" }), 100);
+          if (highlightId && post.id === highlightId) {
+            div.classList.add("highlight");
+            setTimeout(
+              () => div.scrollIntoView({ behavior: "smooth", block: "center" }),
+              100
+            );
+          }
+
+          const thumb = document.createElement("img");
+          thumb.src = post.imageUrls[0];
+          thumb.alt = post.tags.join(", ") || "uploaded image";
+          div.appendChild(thumb);
+
+          const tagsDiv = document.createElement("div");
+          tagsDiv.className = "post-tags";
+          post.tags.forEach((t) => {
+            const span = document.createElement("span");
+            span.className = "tag";
+            span.textContent = t;
+            tagsDiv.appendChild(span);
+          });
+          div.appendChild(tagsDiv);
+
+          const editBtn = document.createElement("button");
+          editBtn.textContent = "Edit";
+          editBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            const newTags = prompt(
+              "新しいタグ（カンマ区切り）",
+              post.tags.join(", ")
+            );
+            if (newTags !== null) {
+              updateTags(post.id, newTags);
+            }
+          });
+          div.appendChild(editBtn);
+
+          div.addEventListener("click", () => {
+            modalContent.innerHTML = "";
+            post.imageUrls.forEach((url) => {
+              const img = document.createElement("img");
+              img.src = url;
+              modalContent.appendChild(img);
+            });
+            modal.style.display = "flex";
+          });
+
+          gallery.appendChild(div);
+        });
       }
 
-      const thumb = document.createElement("img");
-      thumb.src = post.imageUrls[0];
-      thumb.alt = post.tags.join(", ") || "uploaded image";
-      div.appendChild(thumb);
+      function updateTags(id, newTags) {
+        fetch("/update-tags", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id, tags: newTags }),
+        })
+          .then((res) => {
+            if (!res.ok) throw new Error("更新に失敗しました");
+            return res.json();
+          })
+          .then(() => {
+            alert("タグを更新しました");
+            location.reload();
+          })
+          .catch((err) => {
+            console.error(err);
+            alert("タグ更新に失敗しました");
+          });
+      }
 
-      const tagsDiv = document.createElement("div");
-      tagsDiv.className = "post-tags";
-      post.tags.forEach((t) => {
-        const span = document.createElement("span");
-        span.className = "tag";
-        span.textContent = t;
-        tagsDiv.appendChild(span);
-      });
-      div.appendChild(tagsDiv);
+      let currentPage = 1;
 
-      const editBtn = document.createElement("button");
-      editBtn.textContent = "Edit";
-      editBtn.addEventListener("click", (e) => {
-        e.stopPropagation();
-        const newTags = prompt("新しいタグ（カンマ区切り）", post.tags.join(", "));
-        if (newTags !== null) {
-          updateTags(post.id, newTags);
+      function fetchGallery(page = 1) {
+        fetch(`/gallery-data?page=${page}`)
+          .then((res) => res.json())
+          .then((data) => {
+            renderGallery(data.posts);
+            renderPagination(data.currentPage, data.totalPages);
+          })
+          .catch((err) => {
+            console.error("画像データ取得失敗:", err);
+            gallery.textContent = "画像データの取得に失敗しました";
+          });
+      }
+
+      function renderPagination(currentPage, totalPages) {
+        const pagination = document.getElementById("pagination");
+        pagination.innerHTML = "";
+
+        for (let i = 1; i <= totalPages; i++) {
+          const btn = document.createElement("button");
+          btn.textContent = i;
+          if (i === currentPage) btn.disabled = true;
+          btn.addEventListener("click", () => {
+            fetchGallery(i);
+          });
+          pagination.appendChild(btn);
         }
-      });
-      div.appendChild(editBtn);
+      }
 
-      div.addEventListener("click", () => {
-        modalContent.innerHTML = "";
-        post.imageUrls.forEach((url) => {
-          const img = document.createElement("img");
-          img.src = url;
-          modalContent.appendChild(img);
-        });
-        modal.style.display = "flex";
+      closeBtn.addEventListener("click", () => {
+        modal.style.display = "none";
+      });
+      modal.addEventListener("click", (e) => {
+        if (e.target === modal) modal.style.display = "none";
       });
 
-      gallery.appendChild(div);
-    });
-  }
-
-  function updateTags(id, newTags) {
-    fetch("/update-tags", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id, tags: newTags }),
-    })
-      .then((res) => {
-        if (!res.ok) throw new Error("更新に失敗しました");
-        return res.json();
-      })
-      .then(() => {
-        alert("タグを更新しました");
-        location.reload();
-      })
-      .catch((err) => {
-        console.error(err);
-        alert("タグ更新に失敗しました");
-      });
-  }
-
-  closeBtn.addEventListener("click", () => {
-    modal.style.display = "none";
-  });
-  modal.addEventListener("click", (e) => {
-    if (e.target === modal) modal.style.display = "none";
-  });
-
-  fetch(endpoint)
-    .then((res) => res.json())
-    .then(renderGallery)
-    .catch((err) => {
-      console.error("画像データ取得失敗:", err);
-      gallery.textContent = "画像データの取得に失敗しました";
-    });
-</script>
+      fetchGallery();
+    </script>
   </body>
 </html>
