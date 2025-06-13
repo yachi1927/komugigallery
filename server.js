@@ -137,3 +137,22 @@ app.listen(port, () => {
 
 const cors = require('cors');
 app.use(cors());
+
+const express = require('express');
+const path = require('path');
+
+// publicフォルダをルートに設定
+app.use(express.static(path.join(__dirname, 'public')));
+
+// ルートにアクセスが来たら public/index.html を返す
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// 他のルートが必要ならここに追記
+// 例: app.get('/api', ...)
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server running at http://localhost:${PORT}`);
+});
