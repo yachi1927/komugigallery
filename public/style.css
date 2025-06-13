@@ -348,18 +348,18 @@ button:hover {
 }
 
 /* ページネーションの親 */
-.pagination {
+#pagination {
   display: flex;
-  gap: 8px;
+  justify-content: center; /* 中央寄せしたい場合 */
+  gap: 10px; /* ボタンの間隔を少し空ける（任意） */
   margin-top: 40px;
   margin-bottom: 40px;
 }
 
 /* ボタン共通スタイル */
-.pagination button {
+#pagination button {
   font-size: 14px;
-  background-color: #f0f0f0;
-  border: 1px solid #ccc;
+  background-color: #8c97a9;
   border-radius: 6px;
   cursor: pointer;
   transition: background-color 0.2s, color 0.2s;
@@ -370,15 +370,14 @@ button:hover {
 }
 
 /* ホバー時 */
-.pagination button:hover {
+#pagination button:hover {
   background-color: #cad0dd;
 }
 
 /* アクティブなページ */
-.pagination button.active {
+#pagination button.active {
   background-color: #4b83bf;
   color: white;
-  border-color: #007bff;
   font-weight: bold;
 }
 
