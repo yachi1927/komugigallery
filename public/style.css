@@ -120,15 +120,16 @@ button:hover {
   border: 1px solid #ddd;
   border-radius: 8px;
   padding: 10px;
-  width: 45%;
+  width: 180px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   box-sizing: border-box;
 }
 
 .image-card img {
   width: 100%;
-  height: auto;
+  height: 180px;
   border-radius: 4px;
+  object-fit: cover;
 }
 
 .image-card p {
@@ -138,11 +139,6 @@ button:hover {
   text-align: center;
 }
 
-@media (max-width: 600px) {
-  .image-card {
-    width: 100%;
-  }
-}
 
 #gallery {
   display: flex;
