@@ -153,7 +153,6 @@ async function loadCarousel() {
   const carousel = document.getElementById("carousel");
   if (!carousel) return;
 
-  // カルーセル内の画像を横並びで入れるdivを作成
   const inner = document.createElement("div");
   inner.className = "carousel-inner";
   carousel.appendChild(inner);
@@ -165,14 +164,13 @@ async function loadCarousel() {
 
     if (!Array.isArray(data.posts) || data.posts.length === 0) return;
 
-    // ランダムに5枚を選択
     const shuffled = data.posts.sort(() => 0.5 - Math.random());
     const selected = shuffled.slice(0, 5);
 
     selected.forEach((item) => {
       let imgUrl = item.imageUrls[0];
       if (imgUrl.includes("/upload/")) {
-        imgUrl = imgUrl.replace("/upload/", "/upload/w_600,h_400,c_fill/");
+        imgUrl = imgUrl.replace("/upload/", "/upload/w_800,h_500,c_fill/");
       }
 
       const img = document.createElement("img");
@@ -184,18 +182,24 @@ async function loadCarousel() {
 
     // スライド制御
     let index = 0;
+
+    function updateSlide() {
+      const slideWidth = carousel.clientWidth;
+      inner.style.transform = `translateX(-${index * slideWidth}px)`;
+    }
+
     setInterval(() => {
       index = (index + 1) % selected.length;
-      inner.style.transform = `translateX(-${index * slideWidth}px)`;
+      updateSlide();
     }, 3000);
+
     window.addEventListener("resize", updateSlide);
+    updateSlide(); // 初期表示も更新
   } catch (err) {
     console.error(err);
     carousel.textContent = "画像の読み込みに失敗しました";
   }
 }
-
-window.addEventListener("DOMContentLoaded", loadCarousel);
 
 // ページ初期読み込み
 loadTags();
