@@ -123,21 +123,26 @@ button:hover {
   border: 1px solid #ddd;
   border-radius: 8px;
   padding: 10px;
-  width: 180px;
-  height: auto;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  box-sizing: border-box;
-  flex-shrink: 0;
+  width: 200px;
+  height: 200px;
+  overflow: hidden;
+  border-radius: 4px;
+  cursor: pointer;
+  display: inline-block;
+  margin: 8px;
+  position: relative;
 }
 
-.image-card:hover {
-  transform: scale(1.03);
+.image-card:hover img {
+  transform: scale(1.05);
 }
 
 .image-card img {
-  width: 100%; /* 横幅に合わせる */
-  height: auto; /* 高さは自動 */
-  display: block; /* 下の余白を防ぐ */
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* 画像をカードの枠いっぱいに切り抜きながらフィット */
+  transition: transform 0.3s ease;
+  display: block;
 }
 
 .image-card p {
@@ -194,10 +199,11 @@ button:hover {
 .modal {
   display: none;
   position: fixed;
-  top: 0; left: 0;
+  top: 0;
+  left: 0;
   width: 100vw;
   height: 100vh;
-  background: rgba(0,0,0,0.8);
+  background: rgba(0, 0, 0, 0.8);
   justify-content: center;
   align-items: center;
   flex-direction: column;
@@ -215,22 +221,22 @@ button:hover {
   max-height: 90vh;
 }
 
-.carousel {
-  display: flex;
-  overflow: hidden;
-  width: 80vw;
-  max-height: 90vh;
+#carousel {
   position: relative;
+  width: 80vw;       /* モーダル内のカルーセル幅 */
+  height: 80vh;      /* 高さ */
+  overflow: hidden;
 }
 
-.carousel img {
-  width: 80vw;
-  max-height: 90vh;
-  object-fit: contain;
-  flex-shrink: 0;
-  user-select: none;
+#carousel img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;       /* カルーセル幅にフィット */
+  height: 100%;      /* 高さにフィット */
+  object-fit: contain; /* 縦横比を維持して収まる */
+  transition: transform 0.3s ease;
 }
-
 .close-btn {
   background: #4c4a52;
   color: white;
