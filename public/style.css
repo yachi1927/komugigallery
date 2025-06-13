@@ -292,13 +292,12 @@ button:hover {
   gap: 8px;
   margin-top: 20px;
   flex-wrap: wrap;
-  padding-top: 20px;
-  padding-bottom: 20px;
 }
 
 /* ボタン共通スタイル */
 .pagination button {
-  padding: 8px 12px;
+  padding-top: 20px;
+  padding-bottom: 20px;
   font-size: 14px;
   background-color: #f0f0f0;
   border: 1px solid #ccc;
