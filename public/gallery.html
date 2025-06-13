@@ -19,6 +19,19 @@
       <div id="tags-container"></div>
       <div id="gallery"></div>
       <div id="pagination"></div>
+
+      <div id="modal" class="modal">
+        <button id="modalClose" class="close-btn">閉じる</button>
+        <div class="carousel-container">
+          <button id="prevBtn" class="close-btn" style="margin-right: 10px">
+            ←
+          </button>
+          <div id="carousel" class="carousel"></div>
+          <button id="nextBtn" class="close-btn" style="margin-left: 10px">
+            →
+          </button>
+        </div>
+      </div>
     </div>
 
     <script>
@@ -114,6 +127,120 @@
           gallery.appendChild(card);
         });
       }
+
+      let modal = null;
+      let carousel = null;
+      let modalCloseBtn = null;
+      let prevBtn = null;
+      let nextBtn = null;
+      let currentSlide = 0;
+      let currentImages = [];
+
+      // 画像カード生成時にクリックイベント追加するよう修正
+      function displayImages(posts) {
+        const gallery = document.getElementById("gallery");
+        gallery.innerHTML = "";
+
+        if (posts.length === 0) {
+          gallery.textContent = "該当する画像がありません";
+          return;
+        }
+
+        posts.forEach((post, index) => {
+          const card = document.createElement("div");
+          card.className = "image-card";
+
+          const img = document.createElement("img");
+          img.src = post.imageUrls[0];
+          img.alt = post.tags.join(", ");
+
+          // 画像クリック時にモーダル表示
+          img.addEventListener("click", () => {
+            openModal(post.imageUrls);
+          });
+
+          card.appendChild(img);
+          gallery.appendChild(card);
+        });
+      }
+
+      // モーダル開く関数
+      function openModal(images) {
+        currentImages = images;
+        currentSlide = 0;
+        renderCarousel();
+        modal.classList.add("active");
+        updateNavButtons();
+      }
+
+      // カルーセル描画
+      function renderCarousel() {
+        carousel.innerHTML = "";
+
+        currentImages.forEach((src, i) => {
+          const img = document.createElement("img");
+          img.src = src;
+          img.style.transform = `translateX(${(i - currentSlide) * 100}%)`;
+          carousel.appendChild(img);
+        });
+      }
+
+      // ナビボタンの状態更新（1枚なら非表示）
+      function updateNavButtons() {
+        if (currentImages.length <= 1) {
+          prevBtn.style.display = "none";
+          nextBtn.style.display = "none";
+        } else {
+          prevBtn.style.display = "inline-block";
+          nextBtn.style.display = "inline-block";
+        }
+      }
+
+      // ナビ操作
+      function showPrev() {
+        if (currentSlide > 0) {
+          currentSlide--;
+          renderCarousel();
+        }
+      }
+      function showNext() {
+        if (currentSlide < currentImages.length - 1) {
+          currentSlide++;
+          renderCarousel();
+        }
+      }
+
+      // モーダル閉じる
+      function closeModal() {
+        modal.classList.remove("active");
+      }
+
+      window.onload = async () => {
+        // 既存コード
+        selectedTag = getTagFromURL();
+        currentPage = getPageFromURL();
+        await loadTags();
+        updateTagButtons();
+        loadGallery(currentPage);
+
+        // モーダル要素取得
+        modal = document.getElementById("modal");
+        carousel = document.getElementById("carousel");
+        modalCloseBtn = document.getElementById("modalClose");
+        prevBtn = document.getElementById("prevBtn");
+        nextBtn = document.getElementById("nextBtn");
+
+        modalCloseBtn.addEventListener("click", closeModal);
+        prevBtn.addEventListener("click", showPrev);
+        nextBtn.addEventListener("click", showNext);
+
+        // ESCキーで閉じる
+        window.addEventListener("keydown", (e) => {
+          if (e.key === "Escape" && modal.classList.contains("active")) {
+            closeModal();
+          }
+        });
+      };
 
       // ページネーションの描画
       function renderPagination() {

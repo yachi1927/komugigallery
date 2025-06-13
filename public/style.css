@@ -194,31 +194,41 @@ button:hover {
 .modal {
   display: none;
   position: fixed;
-  top: 0;
-  left: 0;
+  top: 0; left: 0;
   width: 100vw;
   height: 100vh;
-  background: rgba(0, 0, 0, 0.8);
+  background: rgba(0,0,0,0.8);
   justify-content: center;
   align-items: center;
   flex-direction: column;
-  z-index: 1000;
+  z-index: 10000;
 }
 
-.modal-content {
-  max-width: 90%;
-  max-height: 80vh;
-  overflow-y: auto;
-  background: white;
-  border-radius: 10px;
-  margin-top: 100px;
+.modal.active {
+  display: flex;
 }
 
-.modal img {
-  width: 100%;
-  max-width: 500px;
-  margin-bottom: 10px;
-  border-radius: 8px;
+.carousel-container {
+  display: flex;
+  align-items: center;
+  max-width: 90vw;
+  max-height: 90vh;
+}
+
+.carousel {
+  display: flex;
+  overflow: hidden;
+  width: 80vw;
+  max-height: 90vh;
+  position: relative;
+}
+
+.carousel img {
+  width: 80vw;
+  max-height: 90vh;
+  object-fit: contain;
+  flex-shrink: 0;
+  user-select: none;
 }
 
 .close-btn {
@@ -226,9 +236,9 @@ button:hover {
   color: white;
   border: none;
   padding: 8px 12px;
-  margin-top: 10px;
   border-radius: 4px;
   cursor: pointer;
+  user-select: none;
 }
 
 .category {
