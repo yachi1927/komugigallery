@@ -363,10 +363,9 @@ button:hover {
 .tag-btn {
   margin: 4px;
   padding: 6px 12px;
-  border: 1px solid #aaa;
   border-radius: 20px;
   cursor: pointer;
-  background: white;
+  background: #4b83bf;
   transition: background 0.2s;
   white-space: nowrap; /* ボタン内のテキスト折り返し防止 */
 }
