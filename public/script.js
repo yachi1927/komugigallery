@@ -22,12 +22,13 @@ if (form) {
 }
 
 // ギャラリーの全データ取得・表示
-async function loadGallery() {
+async function loadGallery(page = 1) {
   try {
-    const res = await fetch("/gallery");
+    const res = await fetch(`/gallery-data?page=${page}`);
     if (!res.ok) throw new Error("ギャラリー取得失敗");
     const data = await res.json();
-    displayImages(data, "gallery");
+    if (!Array.isArray(data.posts)) throw new Error("レスポンス形式が不正です");
+    displayImages(data.posts, "gallery");
   } catch (err) {
     console.error(err);
     const container = document.getElementById("gallery");
@@ -45,7 +46,6 @@ function displayImages(images, containerId = "gallery") {
     card.className = "card";
 
     const img = document.createElement("img");
-    // Cloudinary画像URLなら最適化（600x400クロップ）
     let imgUrl = item.imageUrls[0];
     if (imgUrl.includes("/upload/")) {
       imgUrl = imgUrl.replace("/upload/", "/upload/w_600,h_400,c_fill/");
@@ -158,10 +158,10 @@ async function loadCarouselImages() {
     const res = await fetch("/gallery-data");
     if (!res.ok) throw new Error("カルーセル画像取得失敗");
     const data = await res.json();
-    if (!Array.isArray(data) || data.length === 0) return;
+    if (!Array.isArray(data.posts) || data.posts.length === 0) return;
 
     // ランダムに5件選択
-    const shuffled = data.sort(() => 0.5 - Math.random());
+    const shuffled = data.posts.sort(() => 0.5 - Math.random());
     const selected = shuffled.slice(0, 5);
 
     selected.forEach((item) => {
