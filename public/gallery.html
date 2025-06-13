@@ -166,7 +166,26 @@
         if (e.target === modal) modal.style.display = "none";
       });
 
-      fetchGallery();
+window.addEventListener("DOMContentLoaded", async () => {
+  const params = new URLSearchParams(window.location.search);
+  const tag = params.get("tag");
+
+  if (tag) {
+    try {
+      const res = await fetch(`/search?tag=${encodeURIComponent(tag)}`);
+      if (!res.ok) throw new Error("検索失敗");
+      const data = await res.json();
+      renderGallery(data); // ✅ displayImages → renderGallery に変更
+    } catch (err) {
+      console.error(err);
+      const container = document.getElementById("gallery");
+      if (container) container.textContent = "画像の取得に失敗しました";
+    }
+  } else {
+    fetchGallery(); // ✅ ここで初めて fetchGallery を呼び出す
+  }
+});
+
     </script>
   </body>
 </html>
