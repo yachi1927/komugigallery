@@ -141,18 +141,32 @@ app.use(cors());
 const express = require('express');
 const path = require('path');
 
+<<<<<<< HEAD
 // publicフォルダをルートに設定
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ルートにアクセスが来たら public/index.html を返す
+=======
+// 静的ファイルの提供（例: public ディレクトリに HTML などがある場合）
+app.use(express.static(path.join(__dirname, 'public')));
+
+// ルートにアクセスされたとき index.html を返す
+>>>>>>> 6fad7dd (タグ機能のバグ修正)
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
+<<<<<<< HEAD
 // 他のルートが必要ならここに追記
 // 例: app.get('/api', ...)
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
+=======
+// ポート設定
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+>>>>>>> 6fad7dd (タグ機能のバグ修正)
 });
