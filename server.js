@@ -102,7 +102,16 @@ app.get("/gallery-data", async (req, res) => {
     const db = await connectDB();
     const collection = db.collection("images");
     const data = await collection.find().sort({ createdAt: -1 }).toArray();
-    res.json(data);
+
+    // _id を文字列に変換し、他のフィールドとともに整形
+    const formatted = data.map((doc) => ({
+      id: doc._id.toString(), // ← ここが重要！
+      imageUrls: doc.imageUrls,
+      tags: doc.tags || [],
+      createdAt: doc.createdAt,
+    }));
+
+    res.json(formatted);
   } catch (error) {
     console.error(error);
     res.status(500).send("データ取得失敗");
