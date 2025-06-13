@@ -39,6 +39,14 @@
       let currentPage = 1;
       let totalPages = 1;
 
+      let modal = null;
+      let carousel = null;
+      let modalCloseBtn = null;
+      let prevBtn = null;
+      let nextBtn = null;
+      let currentSlide = 0;
+      let currentImages = [];
+
       // URLからtagパラメータを取得
       function getTagFromURL() {
         const params = new URLSearchParams(window.location.search);
@@ -105,7 +113,7 @@
         });
       }
 
-      // 画像をカード形式で表示
+      // 画像をカード形式で表示、クリックでモーダルを開く
       function displayImages(posts) {
         const gallery = document.getElementById("gallery");
         gallery.innerHTML = "";
@@ -123,38 +131,6 @@
           img.src = post.imageUrls[0];
           img.alt = post.tags.join(", ");
 
-          card.appendChild(img);
-          gallery.appendChild(card);
-        });
-      }
-
-      let modal = null;
-      let carousel = null;
-      let modalCloseBtn = null;
-      let prevBtn = null;
-      let nextBtn = null;
-      let currentSlide = 0;
-      let currentImages = [];
-
-      // 画像カード生成時にクリックイベント追加するよう修正
-      function displayImages(posts) {
-        const gallery = document.getElementById("gallery");
-        gallery.innerHTML = "";
-
-        if (posts.length === 0) {
-          gallery.textContent = "該当する画像がありません";
-          return;
-        }
-
-        posts.forEach((post, index) => {
-          const card = document.createElement("div");
-          card.className = "image-card";
-
-          const img = document.createElement("img");
-          img.src = post.imageUrls[0];
-          img.alt = post.tags.join(", ");
-
-          // 画像クリック時にモーダル表示
           img.addEventListener("click", () => {
             openModal(post.imageUrls);
           });
@@ -214,33 +190,6 @@
       function closeModal() {
         modal.classList.remove("active");
       }
-
-      window.onload = async () => {
-        // 既存コード
-        selectedTag = getTagFromURL();
-        currentPage = getPageFromURL();
-        await loadTags();
-        updateTagButtons();
-        loadGallery(currentPage);
-
-        // モーダル要素取得
-        modal = document.getElementById("modal");
-        carousel = document.getElementById("carousel");
-        modalCloseBtn = document.getElementById("modalClose");
-        prevBtn = document.getElementById("prevBtn");
-        nextBtn = document.getElementById("nextBtn");
-
-        modalCloseBtn.addEventListener("click", closeModal);
-        prevBtn.addEventListener("click", showPrev);
-        nextBtn.addEventListener("click", showNext);
-
-        // ESCキーで閉じる
-        window.addEventListener("keydown", (e) => {
-          if (e.key === "Escape" && modal.classList.contains("active")) {
-            closeModal();
-          }
-        });
-      };
 
       // ページネーションの描画
       function renderPagination() {
@@ -303,10 +252,26 @@
         currentPage = getPageFromURL();
         await loadTags();
         updateTagButtons();
-        loadGallery(currentPage);
+        await loadGallery(currentPage);
+
+        modal = document.getElementById("modal");
+        carousel = document.getElementById("carousel");
+        modalCloseBtn = document.getElementById("modalClose");
+        prevBtn = document.getElementById("prevBtn");
+        nextBtn = document.getElementById("nextBtn");
+
+        modalCloseBtn.addEventListener("click", closeModal);
+        prevBtn.addEventListener("click", showPrev);
+        nextBtn.addEventListener("click", showNext);
+
+        window.addEventListener("keydown", (e) => {
+          if (e.key === "Escape" && modal.classList.contains("active")) {
+            closeModal();
+          }
+        });
       };
 
-      // ブラウザの戻る進むでURLが変わったときも対応したい場合は以下追加可能
+      // ブラウザの戻る・進むに対応
       window.onpopstate = () => {
         selectedTag = getTagFromURL();
         currentPage = getPageFromURL();
