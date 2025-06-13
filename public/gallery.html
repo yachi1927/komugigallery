@@ -6,7 +6,7 @@
     <link href="style.css" rel="stylesheet" type="text/css" />
     <title>Gallery</title>
   </head>
-  
+
   <body>
     <div class="bg">
       <header>
@@ -21,15 +21,18 @@
       <div id="pagination"></div>
     </div>
 
-    <script>
+<script>
       let selectedTag = null;
       let currentPage = 1;
       let totalPages = 1;
 
+      // タグ取得してボタン表示
       async function loadTags() {
         try {
           const res = await fetch("/tags");
+          if (!res.ok) throw new Error("タグの取得に失敗しました");
           const tags = await res.json();
+
           const container = document.getElementById("tags-container");
           container.innerHTML = "";
 
@@ -38,6 +41,7 @@
             btn.className = "tag-btn";
             btn.textContent = tag;
             btn.addEventListener("click", () => {
+              // 同じタグが選択されていれば解除、違えば選択し直し
               selectedTag = selectedTag === tag ? null : tag;
               currentPage = 1;
               updateTagButtons();
@@ -48,10 +52,11 @@
 
           updateTagButtons();
         } catch (e) {
-          alert("タグの取得に失敗しました");
+          alert(e.message);
         }
       }
 
+      // 選択タグのボタン状態を更新
       function updateTagButtons() {
         const buttons = document.querySelectorAll(".tag-btn");
         buttons.forEach((btn) => {
@@ -63,6 +68,7 @@
         });
       }
 
+      // 画像をカード形式で表示
       function displayImages(posts) {
         const gallery = document.getElementById("gallery");
         gallery.innerHTML = "";
@@ -85,6 +91,7 @@
         });
       }
 
+      // ページネーションの描画
       function renderPagination() {
         const container = document.getElementById("pagination");
         container.innerHTML = "";
@@ -118,6 +125,7 @@
         container.appendChild(nextBtn);
       }
 
+      // ギャラリー読み込み（タグ1つだけ送る）
       async function loadGallery(page = 1) {
         try {
           let url = `/gallery-data?page=${page}`;
@@ -125,6 +133,7 @@
             url += `&tag=${encodeURIComponent(selectedTag)}`;
           }
           const res = await fetch(url);
+          if (!res.ok) throw new Error("ギャラリーの取得に失敗しました");
           const json = await res.json();
 
           displayImages(json.posts);
@@ -132,7 +141,7 @@
           totalPages = json.totalPages;
           renderPagination();
         } catch (e) {
-          alert("ギャラリーの取得に失敗しました");
+          alert(e.message);
         }
       }
 
@@ -140,6 +149,5 @@
         loadTags();
         loadGallery();
       };
-    </script>
-  </body>
+    </script>  </body>
 </html>

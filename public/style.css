@@ -120,7 +120,7 @@ button:hover {
   border: 1px solid #ddd;
   border-radius: 8px;
   padding: 10px;
-  width: 250px;
+  width: 200px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   box-sizing: border-box;
   flex-shrink: 0;
