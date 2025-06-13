@@ -21,12 +21,20 @@ cloudinary.config({
 });
 
 // MongoDB設定
-const client = new MongoClient(process.env.MONGODB_URI);
-let db;
+const { MongoClient } = require("mongodb");
+
+const uri = process.env.MONGODB_URI;
+const client = new MongoClient(uri);
 
 async function connectDB() {
-  if (!client.isConnected()) await client.connect();
-  db = client.db("komugiGalleryDB"); // DB名は適宜変更してください
+  try {
+    await client.connect();
+    console.log("MongoDB connected");
+    return client.db("your-db-name"); // 適宜置き換えてください
+  } catch (err) {
+    console.error("MongoDB connection error:", err);
+    throw err;
+  }
 }
 
 app.use(cors());
