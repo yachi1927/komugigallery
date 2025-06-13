@@ -211,33 +211,80 @@ button:hover {
 }
 
 /* モーダル */
-.modal {
+#modal {
   display: none;
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
   justify-content: center;
   align-items: center;
   z-index: 1000;
 }
 
-.modal.active {
+#modal.active {
   display: flex;
 }
 
-.close-btn {
-  background: #4c4a52;
-  color: white;
-  border: none;
-  padding: 8px 12px;
-  border-radius: 4px;
-  cursor: pointer;
-  user-select: none;
+/* カルーセルラッパー */
+#carousel {
+  position: relative;
+  width: 80vw;
+  height: 80vh;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
+/* 各画像 */
+#carousel img {
+  min-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  transition: transform 0.5s ease;
+}
+
+/* スライド位置制御は JS 側で transform: translateX() を操作 */
+
+/* 閉じるボタン */
+#modalClose {
+  position: absolute;
+  top: 20px;
+  right: 30px;
+  font-size: 30px;
+  background: none;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  z-index: 1010;
+}
+
+/* ナビゲーションボタン */
+.carousel-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(255, 255, 255, 0.8);
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 10px;
+  border-radius: 50%;
+  z-index: 1001;
+  transition: background 0.3s;
+}
+
+.carousel-nav:hover {
+  background: rgba(255, 255, 255, 1);
+}
+
+#prevBtn {
+  left: 20px;
+}
+
+#nextBtn {
+  right: 20px;
+}
 .category {
   margin-bottom: 1rem;
 }
@@ -277,26 +324,6 @@ button:hover {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
   gap: 1rem;
-}
-.carousel-container {
-  width: 100%;
-  max-width: 600px;
-  overflow: hidden;
-  margin: 0 auto;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-}
-
-.carousel {
-  display: flex;
-  transition: transform 0.5s ease-in-out;
-  width: max-content; /* 横幅は画像の幅合計 */
-}
-
-.carousel img {
-  width: 100%; /* containerの幅に合わせる */
-  flex-shrink: 0;
-  justify-content: center;
 }
 
 /* ページネーションの親 */
