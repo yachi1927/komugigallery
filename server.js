@@ -2,27 +2,32 @@ const express = require('express');
 const multer = require('multer');
 const fs = require('fs');
 const path = require('path');
+const cors = require('cors');
 
 const app = express();
-const port = 3000;
+const PORT = process.env.PORT || 3000;
 
 const uploadPath = path.join(__dirname, 'uploads');
 const dataFile = path.join(__dirname, 'data.json');
 
-// uploads フォルダを自動作成
+// 必要なフォルダ作成
 fs.mkdirSync(uploadPath, { recursive: true });
 
-// multer設定（複数ファイル）
+// CORS許可
+app.use(cors());
+
+// ミドルウェア設定
+app.use(express.static(path.join(__dirname, 'public')));
+app.use('/uploads', express.static(uploadPath));
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
+
+// multer設定
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, uploadPath),
   filename: (req, file, cb) => cb(null, Date.now() + '-' + file.originalname)
 });
 const upload = multer({ storage });
-
-app.use(express.static('public'));
-app.use('/uploads', express.static(uploadPath));
-app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
 
 // アップロード処理
 app.post('/upload', upload.array('images', 10), (req, res) => {
@@ -60,7 +65,6 @@ app.get('/gallery-data', (req, res) => {
 app.get('/tags', (req, res) => {
   const data = fs.existsSync(dataFile) ? JSON.parse(fs.readFileSync(dataFile)) : [];
   const allTags = new Set();
-
   data.forEach(item => item.tags.forEach(tag => allTags.add(tag)));
   res.json(Array.from(allTags));
 });
@@ -91,18 +95,17 @@ app.post('/update-tags', (req, res) => {
   res.json({ success: true });
 });
 
-// タグカテゴリー分けAPI
+// タグカテゴリー分け
 app.get('/tag-categories', (req, res) => {
   const data = fs.existsSync(dataFile) ? JSON.parse(fs.readFileSync(dataFile)) : [];
   const allTags = new Set();
   data.forEach(item => item.tags.forEach(tag => allTags.add(tag)));
   const tagsArray = Array.from(allTags);
 
-  // ルール定義（必要に応じて変更してください）
   const categoryRules = {
     "CP": ["akiz","hiar"],
     "Character": ["izumi","akiyoshi","aruwo","hisanobu"],
-    "Date": tagsArray.filter(tag => /\d{4}\/\d{2}/.test(tag) || /\d{4}年/.test(tag)) // 例: 2021/07 や 2024年
+    "Date": tagsArray.filter(tag => /\d{4}\/\d{2}/.test(tag) || /\d{4}年/.test(tag))
   };
 
   function categorizeTags(tags, rules) {
@@ -113,15 +116,15 @@ app.get('/tag-categories', (req, res) => {
     categorized["Other"] = [];
 
     tags.forEach(tag => {
-      let foundCategory = false;
+      let found = false;
       for (const category in rules) {
         if (rules[category].includes(tag)) {
           categorized[category].push(tag);
-          foundCategory = true;
+          found = true;
           break;
         }
       }
-      if (!foundCategory) categorized["Other"].push(tag);
+      if (!found) categorized["Other"].push(tag);
     });
 
     return categorized;
@@ -131,42 +134,12 @@ app.get('/tag-categories', (req, res) => {
   res.json(categorizedTags);
 });
 
-app.listen(port, () => {
-  console.log(`Server running at http://localhost:${port}`);
-});
-
-const cors = require('cors');
-app.use(cors());
-
-const express = require('express');
-const path = require('path');
-
-<<<<<<< HEAD
-// publicフォルダをルートに設定
-app.use(express.static(path.join(__dirname, 'public')));
-
-// ルートにアクセスが来たら public/index.html を返す
-=======
-// 静的ファイルの提供（例: public ディレクトリに HTML などがある場合）
-app.use(express.static(path.join(__dirname, 'public')));
-
-// ルートにアクセスされたとき index.html を返す
->>>>>>> 6fad7dd (タグ機能のバグ修正)
+// ルート表示
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-<<<<<<< HEAD
-// 他のルートが必要ならここに追記
-// 例: app.get('/api', ...)
-
-const PORT = process.env.PORT || 3000;
+// サーバー起動
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
-=======
-// ポート設定
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
->>>>>>> 6fad7dd (タグ機能のバグ修正)
 });
