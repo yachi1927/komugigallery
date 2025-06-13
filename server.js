@@ -132,12 +132,30 @@ app.get("/gallery-data", async (req, res) => {
   }
 });
 
+async function loadGallery(page = 1) {
+  try {
+    const res = await fetch(`/gallery-data?page=${page}`);
+    if (!res.ok) throw new Error("ギャラリー取得失敗");
+    const json = await res.json();
+
+    displayImages(json.posts, "gallery");
+
+    // ページネーションUIがあれば更新や制御をここに書く
+    console.log(`ページ${json.currentPage} / ${json.totalPages}`);
+  } catch (error) {
+    console.error(error);
+    alert(error.message);
+  }
+}
+
 // タグ一覧取得
 app.get("/tags", async (req, res) => {
   try {
     const db = await connectDB();
     const collection = db.collection("images");
-    const allDocs = await collection.find({}, { projection: { tags: 1 } }).toArray();
+    const allDocs = await collection
+      .find({}, { projection: { tags: 1 } })
+      .toArray();
     const allTagsSet = new Set();
     allDocs.forEach((doc) => doc.tags.forEach((tag) => allTagsSet.add(tag)));
     res.json(Array.from(allTagsSet));
@@ -202,13 +220,15 @@ app.get("/tag-categories", async (req, res) => {
   try {
     const db = await connectDB();
     const collection = db.collection("images");
-    const allDocs = await collection.find({}, { projection: { tags: 1 } }).toArray();
+    const allDocs = await collection
+      .find({}, { projection: { tags: 1 } })
+      .toArray();
     const allTagsSet = new Set();
     allDocs.forEach((doc) => doc.tags.forEach((tag) => allTagsSet.add(tag)));
     const tagsArray = Array.from(allTagsSet);
 
     const categoryRules = {
-      CP: ["akiz", "hiar", "szak", "kmkt","nekochan","kiroro"],
+      CP: ["akiz", "hiar", "szak", "kmkt", "nekochan", "kiroro"],
       Character: [
         "izumi",
         "akiyoshi",
