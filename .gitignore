@@ -1,3 +1,14 @@
+# Node.js 関連
+node_modules/
+npm-debug.log
+
+# ビルド成果物
+dist/
+build/
+
+# 環境変数ファイル（絶対に公開しない）
 .env
-node_modules
-uploads
+
+# OSやエディタ固有のファイル
+.DS_Store
+.vscode/

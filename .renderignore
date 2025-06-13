@@ -1,0 +1,16 @@
+# git管理したくないファイルは基本除外
+node_modules/
+npm-debug.log
+.DS_Store
+.vscode/
+
+# ローカルのビルド成果物（もしサーバーでビルドするなら除外）
+dist/
+build/
+
+# 環境変数ファイルはRenderの環境変数で管理するので不要
+.env
+
+# 画像やアップロードフォルダなど大容量のものは
+# Cloudinaryなど外部ストレージに任せているなら除外してOK
+uploads/
