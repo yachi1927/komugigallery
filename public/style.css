@@ -299,6 +299,7 @@ button:hover {
 .carousel img {
   width: 100%; /* containerの幅に合わせる */
   flex-shrink: 0;
+  justify-content: center;
 }
 
 /* ページネーションの親 */
