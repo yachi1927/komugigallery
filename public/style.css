@@ -258,34 +258,23 @@ button:hover {
 }
 
 .carousel-container {
-  position: relative;
-  width: 30%;
-  margin: 20px auto;
+  width: 300px;        /* 好きな幅 */
   overflow: hidden;
-  border-radius: 10px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
-  padding-bottom: 40px;
-}
-
-@media (max-width: 600px) {
-  .carousel-container {
-    width: 80%;
-    height: 100%;
-  }
+  margin: 0 auto;
+  border: 1px solid #ccc;
+  border-radius: 8px;
 }
 
 .carousel {
   display: flex;
   transition: transform 0.5s ease-in-out;
+  width: max-content;  /* 横幅は画像の幅合計 */
 }
 
 .carousel img {
-  width: 100%;
+  width: 300px; /* containerの幅に合わせる */
   flex-shrink: 0;
-  object-fit: cover;
-  height: auto;
 }
-
 /* ページネーションの親 */
 .pagination {
   display: flex;
