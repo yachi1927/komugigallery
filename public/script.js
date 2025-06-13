@@ -4,26 +4,40 @@ if (form) {
     e.preventDefault();
     const formData = new FormData(form);
 
-    const res = await fetch("/upload", {
-      method: "POST",
-      body: formData,
-    });
-
-    const data = await res.json();
-    alert("アップロード完了");
-    form.reset();
+    try {
+      const res = await fetch("/upload", {
+        method: "POST",
+        body: formData,
+      });
+      if (!res.ok) throw new Error("アップロード失敗");
+      const data = await res.json();
+      alert("アップロード完了");
+      form.reset();
+      loadGallery(); // アップロード後にギャラリー再読み込み
+    } catch (err) {
+      console.error(err);
+      alert("アップロードに失敗しました");
+    }
   });
 }
 
 // ギャラリーの全データ取得・表示
 async function loadGallery() {
-  const res = await fetch("/gallery");
-  const data = await res.json();
-  displayImages(data, "gallery");
+  try {
+    const res = await fetch("/gallery");
+    if (!res.ok) throw new Error("ギャラリー取得失敗");
+    const data = await res.json();
+    displayImages(data, "gallery");
+  } catch (err) {
+    console.error(err);
+    const container = document.getElementById("gallery");
+    if (container) container.textContent = "画像の取得に失敗しました";
+  }
 }
 
 function displayImages(images, containerId = "gallery") {
   const container = document.getElementById(containerId);
+  if (!container) return;
   container.innerHTML = "";
 
   images.forEach((item) => {
@@ -31,8 +45,13 @@ function displayImages(images, containerId = "gallery") {
     card.className = "card";
 
     const img = document.createElement("img");
-    img.src = item.imageUrls[0];
-    img.alt = item.tags.join(", ");
+    // Cloudinary画像URLなら最適化（600x400クロップ）
+    let imgUrl = item.imageUrls[0];
+    if (imgUrl.includes("/upload/")) {
+      imgUrl = imgUrl.replace("/upload/", "/upload/w_600,h_400,c_fill/");
+    }
+    img.src = imgUrl;
+    img.alt = item.tags.length ? item.tags.join(", ") : "uploaded image";
     img.style.maxWidth = "200px";
     img.style.margin = "10px";
 
@@ -47,35 +66,63 @@ function displayImages(images, containerId = "gallery") {
 
 // 検索実行
 async function searchImages() {
-  const keyword = document.getElementById("searchInput").value;
-  const res = await fetch(`/search?tag=${encodeURIComponent(keyword)}`);
-  const data = await res.json();
-  displayImages(data, "results");
+  const keyword = document.getElementById("searchInput").value.trim();
+  if (!keyword) return alert("検索キーワードを入力してください");
+
+  try {
+    const res = await fetch(`/search?tag=${encodeURIComponent(keyword)}`);
+    if (!res.ok) throw new Error("検索失敗");
+    const data = await res.json();
+    displayResults(data);
+  } catch (err) {
+    console.error(err);
+    alert("検索に失敗しました");
+  }
 }
 
 // タグ一覧の表示とクリック時の検索
 async function loadTags() {
-  const res = await fetch("/tags");
-  const tags = await res.json();
-  const tagList = document.getElementById("tagList");
+  try {
+    const res = await fetch("/tags");
+    if (!res.ok) throw new Error("タグ取得失敗");
+    const tags = await res.json();
+    const tagList = document.getElementById("tagList");
+    if (!tagList) return;
+    tagList.innerHTML = "";
 
-  tags.forEach((tag) => {
-    const tagLink = document.createElement("a");
-    tagLink.className = "tag";
-    tagLink.href = "#";
-    tagLink.textContent = tag;
-    tagLink.onclick = async () => {
-      const res = await fetch("/search?tag=" + encodeURIComponent(tag));
-      const data = await res.json();
-      displayResults(data);
-    };
-    tagList.appendChild(tagLink);
-  });
+    tags.forEach((tag) => {
+      const tagLink = document.createElement("a");
+      tagLink.className = "tag";
+      tagLink.href = "#";
+      tagLink.textContent = tag;
+
+      tagLink.addEventListener("click", async (event) => {
+        event.preventDefault();
+        try {
+          const res = await fetch("/search?tag=" + encodeURIComponent(tag));
+          if (!res.ok) throw new Error("タグ検索失敗");
+          const data = await res.json();
+          displayResults(data);
+        } catch (err) {
+          console.error(err);
+          alert("タグ検索に失敗しました");
+        }
+      });
+
+      tagList.appendChild(tagLink);
+    });
+  } catch (err) {
+    console.error(err);
+    const tagList = document.getElementById("tagList");
+    if (tagList) tagList.textContent = "タグの取得に失敗しました";
+  }
 }
 
 function displayResults(images) {
   const container = document.getElementById("results");
+  if (!container) return;
   container.innerHTML = "";
+
   images.forEach((item) => {
     const card = document.createElement("div");
     card.className = "card";
@@ -84,8 +131,12 @@ function displayResults(images) {
     link.href = `/gallery.html?id=${item.id}`;
 
     const img = document.createElement("img");
-    img.src = item.imageUrls[0];
-    img.alt = item.tags.join(", ");
+    let imgUrl = item.imageUrls[0];
+    if (imgUrl.includes("/upload/")) {
+      imgUrl = imgUrl.replace("/upload/", "/upload/w_600,h_400,c_fill/");
+    }
+    img.src = imgUrl;
+    img.alt = item.tags.length ? item.tags.join(", ") : "uploaded image";
 
     link.appendChild(img);
     card.appendChild(link);
@@ -98,42 +149,47 @@ function displayResults(images) {
   });
 }
 
-// ✅ カルーセルの表示（index.html用）
+// カルーセル表示（index.html用）
 async function loadCarouselImages() {
-  const carousel = document.getElementById("carousel");
-  if (!carousel) return;
+  const carouselInner = document.getElementById("carouselInner");
+  if (!carouselInner) return;
 
-  const res = await fetch("/gallery-data");
-  const data = await res.json();
-  if (!Array.isArray(data) || data.length === 0) return;
+  try {
+    const res = await fetch("/gallery-data");
+    if (!res.ok) throw new Error("カルーセル画像取得失敗");
+    const data = await res.json();
+    if (!Array.isArray(data) || data.length === 0) return;
 
-  // ランダムに5件選択
-  const shuffled = data.sort(() => 0.5 - Math.random());
-  const selected = shuffled.slice(0, 5);
+    // ランダムに5件選択
+    const shuffled = data.sort(() => 0.5 - Math.random());
+    const selected = shuffled.slice(0, 5);
 
-  selected.forEach((item) => {
-    const originalUrl = item.imageUrls[0];
+    selected.forEach((item) => {
+      let imgUrl = item.imageUrls[0];
+      if (imgUrl.includes("/upload/")) {
+        imgUrl = imgUrl.replace("/upload/", "/upload/w_600,h_400,c_fill/");
+      }
 
-    // Cloudinary画像のサムネイルURLに変換（例: 幅600, 高さ400で自動クロップ）
-    const optimizedUrl = originalUrl.replace(
-      "/upload/",
-      "/upload/w_600,h_400,c_fill/"
-    );
+      const img = document.createElement("img");
+      img.src = imgUrl;
+      img.alt = item.tags.length ? item.tags.join(", ") : "carousel image";
+      img.style.width = "600px"; // 固定幅
+      img.style.flexShrink = "0"; // 横に並ぶように
 
-    const img = document.createElement("img");
-    img.src = optimizedUrl;
-    img.alt = item.tags.join(", ");
-    carousel.appendChild(img);
-  });
+      carouselInner.appendChild(img);
+    });
 
-  // スライド表示
-  let index = 0;
-  setInterval(() => {
-    index = (index + 1) % selected.length;
-    carousel.style.transform = `translateX(-${index * 100}%)`;
-  }, 3000);
+    let index = 0;
+    setInterval(() => {
+      index = (index + 1) % selected.length;
+      carouselInner.style.transform = `translateX(-${index * 600}px)`;
+    }, 3000);
+  } catch (err) {
+    console.error(err);
+  }
 }
 
-// ✅ 初期読み込み
+// ページ初期読み込み
 loadTags();
+loadGallery();
 loadCarouselImages();
