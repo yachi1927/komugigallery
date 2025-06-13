@@ -25,7 +25,7 @@
         <a class="link" href="gallery.html">Gallery</a>
         <a class="link" href="tags.html">Tag</a>
       </header>
-        <div id="tagCategories"></div>
+      <div id="tagCategories"></div>
       <!-- カテゴリー分けしたタグ一覧 -->
 
       <div id="searchResults"></div>
@@ -33,6 +33,7 @@
     </div>
 
     <script>
+      // タグカテゴリー取得＆表示
       async function fetchAndRenderTagCategories() {
         const container = document.getElementById("tagCategories");
         container.innerHTML = "読み込み中...";
@@ -63,7 +64,8 @@
               const tagLink = document.createElement("a");
               tagLink.className = "tag";
               tagLink.textContent = tag;
-              tagLink.href = `/gallery.html?tag=${encodeURIComponent(tag)}`;
+              tagLink.href = "#"; // 遷移しないように #
+              tagLink.dataset.tag = tag; // data属性に保持
               tagList.appendChild(tagLink);
             });
 
@@ -75,12 +77,70 @@
               tagList.classList.toggle("open");
             });
           }
+
+          // タグクリックのイベント設定
+          addTagClickHandlers();
         } catch (err) {
           container.textContent = err.message;
           console.error(err);
         }
       }
 
+      // タグクリック時に該当画像を10件表示
+      function addTagClickHandlers() {
+        const tagLinks = document.querySelectorAll(".tag");
+        const resultsContainer = document.getElementById("searchResults");
+
+        tagLinks.forEach((link) => {
+          link.addEventListener("click", async (e) => {
+            e.preventDefault();
+            const tag = e.currentTarget.dataset.tag;
+            resultsContainer.innerHTML = "検索中...";
+
+            try {
+              const res = await fetch(`/search?tag=${encodeURIComponent(tag)}`);
+              if (!res.ok) throw new Error("検索結果の取得に失敗しました");
+
+              const images = await res.json();
+              if (images.length === 0) {
+                resultsContainer.textContent = `タグ「${tag}」に該当する画像はありません。`;
+                return;
+              }
+
+              // 表示クリア
+              resultsContainer.innerHTML = "";
+
+              // 10件まで表示
+              images.slice(0, 10).forEach((item) => {
+                const card = document.createElement("div");
+                card.className = "image-card";
+
+                // 画像表示（Cloudinary URL想定）
+                item.imageUrls.forEach((url) => {
+                  const img = document.createElement("img");
+                  img.src = url;
+                  img.alt = item.tags.join(", ");
+                  card.appendChild(img);
+                });
+
+                // タグ表示
+                const tagDiv = document.createElement("div");
+                tagDiv.className = "tags-container";
+                tagDiv.textContent =
+                  "タグ: " + (item.tags.length ? item.tags.join(", ") : "なし");
+                card.appendChild(tagDiv);
+
+                resultsContainer.appendChild(card);
+              });
+            } catch (error) {
+              resultsContainer.textContent = error.message;
+              console.error(error);
+            }
+          });
+        });
+      }
+
+      // ページ読み込み時にタグカテゴリ表示
       fetchAndRenderTagCategories();
     </script>
   </body>

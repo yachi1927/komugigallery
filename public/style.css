@@ -227,32 +227,46 @@ button:hover {
   cursor: pointer;
 }
 
-#tagList {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 20px;
-  margin-bottom: 20px;
-  margin-left: 20px;
-  margin-right: 20px;
+.category {
+  margin-bottom: 1rem;
 }
-
+.category-toggle {
+  cursor: pointer;
+  background-color: #eee;
+  border: none;
+  padding: 0.5rem 1rem;
+  font-weight: bold;
+  width: 100%;
+  text-align: left;
+}
+.tag-list {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+  padding-left: 1rem;
+}
+.tag-list.open {
+  max-height: 200px; /* 適宜調整 */
+  overflow: auto;
+}
+.tag {
+  display: inline-block;
+  margin: 0.25rem 0.5rem 0.25rem 0;
+  padding: 0.25rem 0.5rem;
+  background-color: #ddd;
+  border-radius: 3px;
+  text-decoration: none;
+  color: #333;
+}
 .tag:hover {
-  background-color: #7b7c8a;
+  background-color: #bbb;
 }
-
-#results {
-  display: flex;
-  justify-content: center;
-  gap: 15px;
+#searchResults {
+  margin-top: 2rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 1rem;
 }
-
-#tagCategories {
-  padding-top: 30px;
-  padding-bottom: 10px;
-  font-size: 20px;
-}
-
 .carousel-container {
   width: 100%;
   max-width: 600px;
