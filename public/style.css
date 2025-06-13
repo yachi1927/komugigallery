@@ -296,24 +296,25 @@ button:hover {
 
 /* ボタン共通スタイル */
 .pagination button {
-  padding-top: 20px;
-  padding-bottom: 20px;
   font-size: 14px;
   background-color: #f0f0f0;
   border: 1px solid #ccc;
   border-radius: 6px;
   cursor: pointer;
   transition: background-color 0.2s, color 0.2s;
+  margin-top: 20px;
+  margin-bottom: 20px;
+
 }
 
 /* ホバー時 */
 .pagination button:hover {
-  background-color: #ddd;
+  background-color: #cad0dd;
 }
 
 /* アクティブなページ */
 .pagination button.active {
-  background-color: #007bff;
+  background-color: #4b83bf;
   color: white;
   border-color: #007bff;
   font-weight: bold;
