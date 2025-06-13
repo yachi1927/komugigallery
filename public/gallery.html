@@ -185,16 +185,23 @@
 
       // カルーセル描画
       function renderCarousel() {
-        carousel.innerHTML = "";
+        // 画像を並べた横長のラッパーを作る
+        const track = document.createElement("div");
+        track.className = "carousel-track";
 
-        currentImages.forEach((src, i) => {
+        currentImages.forEach((src) => {
           const img = document.createElement("img");
           img.src = src;
-          img.style.transform = `translateX(${(i - currentSlide) * 100}%)`;
-          carousel.appendChild(img);
+          track.appendChild(img);
         });
-      }
 
+        // トラックを表示位置に合わせてスライド
+        track.style.transform = `translateX(-${currentSlide * 100}%)`;
+
+        // 既存のcarousel要素を置き換え
+        carousel.innerHTML = "";
+        carousel.appendChild(track);
+      }
       // ナビボタンの状態更新（1枚なら非表示）
       function updateNavButtons() {
         if (currentImages.length <= 1) {
