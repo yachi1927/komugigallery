@@ -201,6 +201,16 @@ async function loadCarousel() {
   }
 }
 
+window.addEventListener("DOMContentLoaded", () => {
+  // 背景はbodyの背景色などでそのままにしておく想定
+  // ページの中身が入っている要素にフェードインクラスを付けておく例
+  const content = document.getElementById("content"); // ページ中身の親要素のid
+
+  if (content) {
+    content.classList.add("visible");
+  }
+});
+
 // ページ初期読み込み
 loadTags();
 loadGallery();
