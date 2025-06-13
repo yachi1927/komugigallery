@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link href="style.css" rel="stylesheet" type="text/css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@300&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="shortcut icon"
+      href="imeges/f_f_object_26_s512_f_object_26_0bg.png"
+    />
+    <title>Upload</title>
+  </head>
+
+  <body>
+    <div class="bg">
+      <header>
+        <a class="link" href="index.html">Top</a>
+
+        <a class="link" href="upload.html">Upload</a>
+
+        <a class="link" href="gallery.html">Gallery</a>
+
+        <a class="link" href="tags.html">Tag</a>
+      </header>
+      <h1>Upload</h1>
+      <form
+        id="uploadForm"
+        enctype="multipart/form-data"
+        method="POST"
+        action="/upload"
+      >
+        <input type="file" name="images" multiple required />
+        <input
+          type="text"
+          name="tags"
+          placeholder="タグをカンマ区切りで入力"
+          required
+        />
+        <button type="submit">Upload</button>
+      </form>
+    </div>
+  </body>
+</html>
