@@ -22,7 +22,7 @@ cloudinary.config({
 // CORS許可
 app.use(cors());
 
-// 静的ファイル配信（publicフォルダ）
+// 静的ファイル配信(publicフォルダ)
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
@@ -84,13 +84,13 @@ app.post('/upload', upload.array('images', 10), async (req, res) => {
   }
 });
 
-// ギャラリー取得API
-app.get('/gallery', (req, res) => {
+// ギャラリー用データ取得API
+app.get('/gallery-data', (req, res) => {
   const data = fs.existsSync(dataFile) ? JSON.parse(fs.readFileSync(dataFile, 'utf8')) : [];
   res.json(data);
 });
 
-// ルートページ（index.htmlなどをpublicに置いてね）
+// ルートページ（index.htmlなどをpublicに置いてください）
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
