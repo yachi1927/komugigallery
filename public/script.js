@@ -105,18 +105,25 @@ async function loadCarouselImages() {
 
   const res = await fetch('/gallery-data');
   const data = await res.json();
-  if (data.length === 0) return;
+  if (!Array.isArray(data) || data.length === 0) return;
 
+  // ランダムに5件選択
   const shuffled = data.sort(() => 0.5 - Math.random());
   const selected = shuffled.slice(0, 5);
 
   selected.forEach(item => {
+    const originalUrl = item.imageUrls[0];
+    
+    // Cloudinary画像のサムネイルURLに変換（例: 幅600, 高さ400で自動クロップ）
+    const optimizedUrl = originalUrl.replace('/upload/', '/upload/w_600,h_400,c_fill/');
+
     const img = document.createElement('img');
-    img.src = item.imageUrls[0];
+    img.src = optimizedUrl;
     img.alt = item.tags.join(', ');
     carousel.appendChild(img);
   });
 
+  // スライド表示
   let index = 0;
   setInterval(() => {
     index = (index + 1) % selected.length;
