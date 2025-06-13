@@ -149,46 +149,6 @@ function displayResults(images) {
   });
 }
 
-// カルーセル表示（index.html用）
-async function loadCarouselImages() {
-  const carouselInner = document.getElementById("carouselInner");
-  if (!carouselInner) return;
-
-  try {
-    const res = await fetch("/gallery-data");
-    if (!res.ok) throw new Error("カルーセル画像取得失敗");
-    const data = await res.json();
-    if (!Array.isArray(data.posts) || data.posts.length === 0) return;
-
-    // ランダムに5件選択
-    const shuffled = data.posts.sort(() => 0.5 - Math.random());
-    const selected = shuffled.slice(0, 5);
-
-    selected.forEach((item) => {
-      let imgUrl = item.imageUrls[0];
-      if (imgUrl.includes("/upload/")) {
-        imgUrl = imgUrl.replace("/upload/", "/upload/w_600,h_400,c_fill/");
-      }
-
-      const img = document.createElement("img");
-      img.src = imgUrl;
-      img.alt = item.tags.length ? item.tags.join(", ") : "carousel image";
-      img.style.width = "600px"; // 固定幅
-      img.style.flexShrink = "0"; // 横に並ぶように
-
-      carouselInner.appendChild(img);
-    });
-
-    let index = 0;
-    setInterval(() => {
-      index = (index + 1) % selected.length;
-      carouselInner.style.transform = `translateX(-${index * 600}px)`;
-    }, 3000);
-  } catch (err) {
-    console.error(err);
-  }
-}
-
 // ページ初期読み込み
 loadTags();
 loadGallery();
