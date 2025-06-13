@@ -6,13 +6,12 @@ const express = require("express");
 const multer = require("multer");
 const { v2: cloudinary } = require("cloudinary");
 const { Readable } = require("stream");
-const fs = require("fs");
 const path = require("path");
 const cors = require("cors");
+const { MongoClient, ObjectId } = require("mongodb");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const dataFile = path.join(__dirname, "data.json");
 
 // Cloudinary設定
 cloudinary.config({
@@ -21,23 +20,28 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-// CORS許可（必要に応じてオリジン制限してください）
+// MongoDB設定
+const client = new MongoClient(process.env.MONGODB_URI);
+let db;
+
+async function connectDB() {
+  if (!client.isConnected()) await client.connect();
+  db = client.db("komugiGalleryDB"); // DB名は適宜変更してください
+}
+
 app.use(cors());
-
-// 静的ファイル配信(publicフォルダ)
 app.use(express.static(path.join(__dirname, "public")));
-
-// POSTリクエストのJSONとURLエンコードされたデータを扱うためのミドルウェア
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// multer メモリストレージ設定（ローカル保存なし）
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
-// 画像アップロードAPI
+// 画像アップロード
 app.post("/upload", upload.array("images", 10), async (req, res) => {
   try {
+    await connectDB();
+
     const tags = req.body.tags
       ? req.body.tags.split(",").map((t) => t.trim()).filter(Boolean)
       : [];
@@ -46,7 +50,6 @@ app.post("/upload", upload.array("images", 10), async (req, res) => {
       return res.status(400).send("画像が選択されていません");
     }
 
-    // Cloudinaryへアップロード
     const uploadPromises = req.files.map((file) => {
       return new Promise((resolve, reject) => {
         const bufferStream = new Readable();
@@ -67,21 +70,13 @@ app.post("/upload", upload.array("images", 10), async (req, res) => {
 
     const imageUrls = await Promise.all(uploadPromises);
 
-    // data.json に保存
-    let data = [];
-    if (fs.existsSync(dataFile)) {
-      data = JSON.parse(fs.readFileSync(dataFile, "utf8"));
-    }
-
-    data.push({
-      id: Date.now(),
+    const collection = db.collection("images");
+    await collection.insertOne({
       imageUrls,
       tags,
+      createdAt: new Date(),
     });
 
-    fs.writeFileSync(dataFile, JSON.stringify(data, null, 2));
-
-    // アップロード完了後はギャラリーページへリダイレクト
     res.redirect("/gallery.html");
   } catch (error) {
     console.error("アップロードエラー:", error);
@@ -89,113 +84,128 @@ app.post("/upload", upload.array("images", 10), async (req, res) => {
   }
 });
 
-// ギャラリー用データ取得API
-app.get("/gallery-data", (req, res) => {
-  const data = fs.existsSync(dataFile)
-    ? JSON.parse(fs.readFileSync(dataFile, "utf8"))
-    : [];
-  res.json(data);
-});
-
-// タグ一覧取得API
-app.get("/tags", (req, res) => {
-  const data = fs.existsSync(dataFile)
-    ? JSON.parse(fs.readFileSync(dataFile, "utf8"))
-    : [];
-  const allTags = new Set();
-  data.forEach((item) => item.tags.forEach((tag) => allTags.add(tag)));
-  res.json(Array.from(allTags));
-});
-
-// タグ検索API
-app.get("/search", (req, res) => {
-  const keyword = (req.query.tag || "").toLowerCase();
-  const data = fs.existsSync(dataFile)
-    ? JSON.parse(fs.readFileSync(dataFile, "utf8"))
-    : [];
-
-  const results = data.filter((item) =>
-    item.tags.some((tag) => tag.toLowerCase().includes(keyword))
-  );
-  res.json(results);
-});
-
-// タグ更新API
-app.post("/update-tags", (req, res) => {
-  const { id, tags } = req.body;
-  if (!id || !tags) {
-    return res.status(400).send("IDとタグが必要です");
+// ギャラリー用データ取得
+app.get("/gallery-data", async (req, res) => {
+  try {
+    await connectDB();
+    const collection = db.collection("images");
+    const data = await collection.find().sort({ createdAt: -1 }).toArray();
+    res.json(data);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("データ取得失敗");
   }
-
-  let data = fs.existsSync(dataFile)
-    ? JSON.parse(fs.readFileSync(dataFile, "utf8"))
-    : [];
-
-  const index = data.findIndex((item) => item.id === Number(id));
-  if (index === -1) {
-    return res.status(404).send("投稿が見つかりません");
-  }
-
-  data[index].tags = tags
-    .split(",")
-    .map((t) => t.trim())
-    .filter(Boolean);
-
-  fs.writeFileSync(dataFile, JSON.stringify(data, null, 2));
-  res.json({ success: true });
 });
 
-// タグカテゴリー取得API
-app.get("/tag-categories", (req, res) => {
-  const data = fs.existsSync(dataFile)
-    ? JSON.parse(fs.readFileSync(dataFile, "utf8"))
-    : [];
-  const allTags = new Set();
-  data.forEach((item) => item.tags.forEach((tag) => allTags.add(tag)));
-  const tagsArray = Array.from(allTags);
+// タグ一覧取得
+app.get("/tags", async (req, res) => {
+  try {
+    await connectDB();
+    const collection = db.collection("images");
+    const allDocs = await collection.find({}, { projection: { tags: 1 } }).toArray();
+    const allTagsSet = new Set();
+    allDocs.forEach(doc => doc.tags.forEach(tag => allTagsSet.add(tag)));
+    res.json(Array.from(allTagsSet));
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("タグ取得失敗");
+  }
+});
 
-  // カテゴリ分類ルール
-  const categoryRules = {
-    CP: ["akiz", "hiar", "szak","kmkt"],
-    Character: ["izumi", "akiyoshi", "aruwo", "hisanobu", "akiko", "suzui","kotori","kumaki"],
-    Date: tagsArray.filter(
-      (tag) => /\d{4}\/\d{2}/.test(tag) || /\d{4}年/.test(tag)
-    ),
-  };
+// タグ検索
+app.get("/search", async (req, res) => {
+  try {
+    await connectDB();
+    const keyword = (req.query.tag || "").toLowerCase();
+    const collection = db.collection("images");
 
-  function categorizeTags(tags, rules) {
-    const categorized = {};
-    for (const category in rules) {
-      categorized[category] = [];
+    const data = await collection.find({
+      tags: { $elemMatch: { $regex: keyword, $options: "i" } },
+    }).toArray();
+
+    res.json(data);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("検索失敗");
+  }
+});
+
+// タグ更新
+app.post("/update-tags", async (req, res) => {
+  try {
+    await connectDB();
+    const { id, tags } = req.body;
+    if (!id || !tags) {
+      return res.status(400).send("IDとタグが必要です");
     }
-    categorized["Other"] = [];
 
-    tags.forEach((tag) => {
-      let found = false;
-      for (const category in rules) {
-        if (rules[category].includes(tag)) {
-          categorized[category].push(tag);
-          found = true;
-          break;
-        }
-      }
-      if (!found) categorized["Other"].push(tag);
-    });
+    const collection = db.collection("images");
+    const newTags = tags.split(",").map((t) => t.trim()).filter(Boolean);
 
-    return categorized;
+    const result = await collection.updateOne(
+      { _id: new ObjectId(id) },
+      { $set: { tags: newTags } }
+    );
+
+    if (result.matchedCount === 0) return res.status(404).send("投稿が見つかりません");
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("タグ更新失敗");
   }
-
-  const categorizedTags = categorizeTags(tagsArray, categoryRules);
-  res.json(categorizedTags);
 });
 
-// ルートアクセス
+// タグカテゴリー取得
+app.get("/tag-categories", async (req, res) => {
+  try {
+    await connectDB();
+    const collection = db.collection("images");
+    const allDocs = await collection.find({}, { projection: { tags: 1 } }).toArray();
+    const allTagsSet = new Set();
+    allDocs.forEach(doc => doc.tags.forEach(tag => allTagsSet.add(tag)));
+    const tagsArray = Array.from(allTagsSet);
+
+    const categoryRules = {
+      CP: ["akiz", "hiar", "szak", "kmkt"],
+      Character: ["izumi", "akiyoshi", "aruwo", "hisanobu", "akiko", "suzui", "kotori", "kumaki"],
+      Date: tagsArray.filter(tag => /\d{4}\/\d{2}/.test(tag) || /\d{4}年/.test(tag)),
+    };
+
+    function categorizeTags(tags, rules) {
+      const categorized = {};
+      for (const category in rules) {
+        categorized[category] = [];
+      }
+      categorized["Other"] = [];
+
+      tags.forEach((tag) => {
+        let found = false;
+        for (const category in rules) {
+          if (rules[category].includes(tag)) {
+            categorized[category].push(tag);
+            found = true;
+            break;
+          }
+        }
+        if (!found) categorized["Other"].push(tag);
+      });
+
+      return categorized;
+    }
+
+    const categorizedTags = categorizeTags(tagsArray, categoryRules);
+    res.json(categorizedTags);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("タグカテゴリー取得失敗");
+  }
+});
+
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-// サーバー起動
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
 });
-
