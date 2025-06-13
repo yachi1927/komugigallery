@@ -247,7 +247,7 @@ app.get("/tag-categories", async (req, res) => {
     const tagsArray = Array.from(allTagsSet);
 
     const categoryRules = {
-      CP: ["akiz", "hiar", "szak", "kmkt", "nekochan", "kiroro"],
+      CP: ["akiz", "hiar", "szak", "kmkt",],
       Character: [
         "izumi",
         "akiyoshi",
@@ -258,6 +258,9 @@ app.get("/tag-categories", async (req, res) => {
         "kotori",
         "kumaki",
         "rei",
+        "nekochan",
+        "kiroro",
+        "huronobu",
       ],
       Date: tagsArray.filter(
         (tag) => /\d{4}\/\d{2}/.test(tag) || /\d{4}年/.test(tag)
