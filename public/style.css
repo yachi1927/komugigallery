@@ -306,7 +306,8 @@ button:hover {
   transition: background-color 0.2s, color 0.2s;
   margin-top: 20px;
   margin-bottom: 20px;
-
+  padding-top: 20px;    /* 上の余白をpaddingで追加 */
+  padding-bottom: 20px; /* 下も同様 */
 }
 
 /* ホバー時 */
