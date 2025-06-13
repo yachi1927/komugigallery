@@ -24,10 +24,12 @@ app.use(cors());
 
 // 静的ファイル配信(publicフォルダ)
 app.use(express.static(path.join(__dirname, 'public')));
+
+// POSTデータのJSONパース
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-// multerメモリストレージ設定（ローカル保存なし）
+// multerメモリストレージ（ローカル保存なし）
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
@@ -63,7 +65,7 @@ app.post('/upload', upload.array('images', 10), async (req, res) => {
 
     const imageUrls = await Promise.all(uploadPromises);
 
-    // data.jsonにURLとタグを保存
+    // data.jsonに保存
     let data = [];
     if (fs.existsSync(dataFile)) {
       data = JSON.parse(fs.readFileSync(dataFile, 'utf8'));
@@ -84,13 +86,40 @@ app.post('/upload', upload.array('images', 10), async (req, res) => {
   }
 });
 
-// ギャラリー用データ取得API
+// ギャラリー取得API
 app.get('/gallery-data', (req, res) => {
   const data = fs.existsSync(dataFile) ? JSON.parse(fs.readFileSync(dataFile, 'utf8')) : [];
   res.json(data);
 });
 
-// ルートページ（index.htmlなどをpublicに置いてください）
+// タグ更新API
+app.post('/update-tags', (req, res) => {
+  const { id, tags } = req.body;
+  if (!id || !tags) {
+    return res.status(400).json({ error: 'idかtagsがありません' });
+  }
+
+  const newTags = Array.isArray(tags)
+    ? tags
+    : tags.split(',').map(t => t.trim()).filter(Boolean);
+
+  let data = [];
+  if (fs.existsSync(dataFile)) {
+    data = JSON.parse(fs.readFileSync(dataFile, 'utf8'));
+  }
+
+  const index = data.findIndex(item => item.id === Number(id));
+  if (index === -1) {
+    return res.status(404).json({ error: '該当IDが見つかりません' });
+  }
+
+  data[index].tags = newTags;
+
+  fs.writeFileSync(dataFile, JSON.stringify(data, null, 2));
+  res.json({ success: true });
+});
+
+// ルートページ
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
