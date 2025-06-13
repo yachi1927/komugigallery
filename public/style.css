@@ -292,6 +292,8 @@ button:hover {
   gap: 8px;
   margin-top: 20px;
   flex-wrap: wrap;
+  padding-top: 20px;
+  padding-bottom: 20px;
 }
 
 /* ボタン共通スタイル */
@@ -325,10 +327,9 @@ button:hover {
   .category-toggle {
     width: 100%;
     text-align: left;
-    background-color: #f2f2f2;
+    background-color: #747481;
     border: none;
     padding: 10px;
-    font-weight: bold;
     cursor: pointer;
     border-radius: 6px;
   }
@@ -350,7 +351,7 @@ button:hover {
     display: inline-block;
     margin: 4px;
     padding: 6px 10px;
-    background-color: #e0e0e0;
+    background-color: #afb2c4;
     border-radius: 20px;
     font-size: 14px;
     cursor: pointer;

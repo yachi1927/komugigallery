@@ -1,43 +1,43 @@
-const form = document.getElementById('uploadForm');
+const form = document.getElementById("uploadForm");
 if (form) {
-  form.addEventListener('submit', async (e) => {
+  form.addEventListener("submit", async (e) => {
     e.preventDefault();
     const formData = new FormData(form);
 
-    const res = await fetch('/upload', {
-      method: 'POST',
-      body: formData
+    const res = await fetch("/upload", {
+      method: "POST",
+      body: formData,
     });
 
     const data = await res.json();
-    alert('アップロード完了');
+    alert("アップロード完了");
     form.reset();
   });
 }
 
 // ギャラリーの全データ取得・表示
 async function loadGallery() {
-  const res = await fetch('/gallery');
+  const res = await fetch("/gallery");
   const data = await res.json();
-  displayImages(data, 'gallery');
+  displayImages(data, "gallery");
 }
 
-function displayImages(images, containerId = 'gallery') {
+function displayImages(images, containerId = "gallery") {
   const container = document.getElementById(containerId);
-  container.innerHTML = '';
+  container.innerHTML = "";
 
-  images.forEach(item => {
-    const card = document.createElement('div');
-    card.className = 'card';
+  images.forEach((item) => {
+    const card = document.createElement("div");
+    card.className = "card";
 
-    const img = document.createElement('img');
+    const img = document.createElement("img");
     img.src = item.imageUrls[0];
-    img.alt = item.tags.join(', ');
-    img.style.maxWidth = '200px';
-    img.style.margin = '10px';
+    img.alt = item.tags.join(", ");
+    img.style.maxWidth = "200px";
+    img.style.margin = "10px";
 
-    const tags = document.createElement('p');
-    tags.textContent = 'タグ: ' + item.tags.join(', ');
+    const tags = document.createElement("p");
+    tags.textContent = "タグ: " + item.tags.join(", ");
 
     card.appendChild(img);
     card.appendChild(tags);
@@ -47,10 +47,10 @@ function displayImages(images, containerId = 'gallery') {
 
 // 検索実行
 async function searchImages() {
-  const keyword = document.getElementById('searchInput').value;
+  const keyword = document.getElementById("searchInput").value;
   const res = await fetch(`/search?tag=${encodeURIComponent(keyword)}`);
   const data = await res.json();
-  displayImages(data, 'results');
+  displayImages(data, "results");
 }
 
 // タグ一覧の表示とクリック時の検索
@@ -100,10 +100,10 @@ function displayResults(images) {
 
 // ✅ カルーセルの表示（index.html用）
 async function loadCarouselImages() {
-  const carousel = document.getElementById('carousel');
+  const carousel = document.getElementById("carousel");
   if (!carousel) return;
 
-  const res = await fetch('/gallery-data');
+  const res = await fetch("/gallery-data");
   const data = await res.json();
   if (!Array.isArray(data) || data.length === 0) return;
 
@@ -111,15 +111,18 @@ async function loadCarouselImages() {
   const shuffled = data.sort(() => 0.5 - Math.random());
   const selected = shuffled.slice(0, 5);
 
-  selected.forEach(item => {
+  selected.forEach((item) => {
     const originalUrl = item.imageUrls[0];
-    
-    // Cloudinary画像のサムネイルURLに変換（例: 幅600, 高さ400で自動クロップ）
-    const optimizedUrl = originalUrl.replace('/upload/', '/upload/w_600,h_400,c_fill/');
 
-    const img = document.createElement('img');
+    // Cloudinary画像のサムネイルURLに変換（例: 幅600, 高さ400で自動クロップ）
+    const optimizedUrl = originalUrl.replace(
+      "/upload/",
+      "/upload/w_600,h_400,c_fill/"
+    );
+
+    const img = document.createElement("img");
     img.src = optimizedUrl;
-    img.alt = item.tags.join(', ');
+    img.alt = item.tags.join(", ");
     carousel.appendChild(img);
   });
 
