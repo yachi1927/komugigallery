@@ -314,28 +314,6 @@ button:hover {
   }
 }
 
-.tag-list {
-  max-height: 0;
-  overflow: hidden;
-  transition: max-height 0.3s ease;
-  padding-left: 1rem;
-}
-
-.tag-list.open {
-  max-height: 200px; /* 適宜調整 */
-  overflow: auto;
-}
-
-.tag {
-  display: inline-block;
-  margin: 0.25rem 0.5rem 0.25rem 0;
-  padding: 0.25rem 0.5rem;
-  background-color: #ddd;
-  border-radius: 3px;
-  text-decoration: none;
-  color: #333;
-}
-
 .tag:hover {
   background-color: #bbb;
 }
@@ -411,6 +389,9 @@ button:hover {
 }
 
 .tag {
+  font-family: "Zen Kaku Gothic New", sans-serif;
+  font-weight: 300;
+  font-style: normal;
   display: inline-block;
   margin: 4px;
   padding: 6px 10px;
