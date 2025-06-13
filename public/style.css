@@ -258,11 +258,17 @@ button:hover {
 }
 
 .carousel-container {
-  width: 600px;        /* 好きな幅 */
+  width: 800px;        /* 好きな幅 */
   overflow: hidden;
   margin: 0 auto;
   border: 1px solid #ccc;
   border-radius: 8px;
+}
+
+@media (max-width: 600px) {
+  .carousel-container {
+    width: 100%;
+  }
 }
 
 .carousel {
@@ -272,9 +278,17 @@ button:hover {
 }
 
 .carousel img {
-  width: 600px; /* containerの幅に合わせる */
+  width: 800px; /* containerの幅に合わせる */
   flex-shrink: 0;
 }
+
+@media (max-width: 600px) {
+  .carousel img {
+    width: 100%;
+  }
+}
+
+
 /* ページネーションの親 */
 .pagination {
   display: flex;

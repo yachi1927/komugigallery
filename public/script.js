@@ -186,7 +186,7 @@ async function loadCarousel() {
     let index = 0;
     setInterval(() => {
       index = (index + 1) % selected.length;
-      inner.style.transform = `translateX(-${index * 600}px)`;
+      inner.style.transform = `translateX(-${index * 800}px)`;
     }, 3000);
   } catch (err) {
     console.error(err);
