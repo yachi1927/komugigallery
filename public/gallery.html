@@ -20,7 +20,8 @@
         <a class="link" href="tags.html">Tag</a>
       </header>
 
-      <div id="tags-container"></div>
+      <button id="toggleTagsBtn">Collapse</button>
+      <div id="tags-container" class="hidden"></div>
       <div id="gallery"></div>
       <div id="pagination"></div>
 
@@ -368,6 +369,15 @@
             if (modal.classList.contains("active")) closeModal();
             if (tagEditorModal.classList.contains("active")) closeTagEditor();
           }
+        });
+        const toggleBtn = document.getElementById("toggleTagsBtn");
+        const tagsContainer = document.getElementById("tags-container");
+
+        toggleBtn.addEventListener("click", () => {
+          tagsContainer.classList.toggle("hidden");
+          toggleBtn.textContent = tagsContainer.classList.contains("hidden")
+            ? "タグを表示する"
+            : "タグを隠す";
         });
       };
 

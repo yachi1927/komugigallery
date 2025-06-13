@@ -410,6 +410,16 @@ button:hover {
   gap: 8px; /* ボタン間の隙間 */
   margin: 20px auto;
   max-width: 90%;
+  transition: max-height 0.3s ease-out, opacity 0.3s ease-out;
+  overflow: hidden;
+}
+
+#tags-container.hidden {
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease, opacity 0.3s ease;
+  pointer-events: none;
 }
 
 .tag-btn {
@@ -418,7 +428,6 @@ button:hover {
   border-radius: 20px;
   cursor: pointer;
   color: #272a37;
-
   background: #4b83bf;
   transition: background 0.2s;
   white-space: nowrap; /* ボタン内のテキスト折り返し防止 */
