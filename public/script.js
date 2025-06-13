@@ -204,4 +204,4 @@ async function loadCarousel() {
 // ページ初期読み込み
 loadTags();
 loadGallery();
-loadCarouselImages();
+loadCarousel(); // ← こちらが正しい関数名
