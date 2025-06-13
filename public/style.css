@@ -298,6 +298,22 @@ button:hover {
   object-fit: contain;
 }
 
+@media (max-width: 600px) {
+  .carousel {
+    width: 100vw;
+    height: 60vh;
+  }
+
+  .carousel-track img {
+    height: 100%;
+  }
+
+  .close-btn {
+    font-size: 1.2rem;
+    padding: 0.4rem 0.8rem;
+  }
+}
+
 .tag-list {
   max-height: 0;
   overflow: hidden;
