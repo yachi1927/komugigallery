@@ -355,3 +355,14 @@ button:hover {
     background-color: #4b83bf;
     color: white;
   }
+
+  /* 最初は透明 */
+.fade-in {
+  opacity: 0;
+  transition: opacity 1s ease-in-out;
+}
+
+/* フェードイン後 */
+.fade-in.visible {
+  opacity: 1;
+}

@@ -28,22 +28,24 @@
 
         <a class="link" href="tags.html">Tag</a>
       </header>
-      <h1>Upload</h1>
-      <form
-        id="uploadForm"
-        enctype="multipart/form-data"
-        method="POST"
-        action="/upload"
-      >
-        <input type="file" name="images" multiple required />
-        <input
-          type="text"
-          name="tags"
-          placeholder="タグをカンマ区切りで入力"
-          required
-        />
-        <button type="submit">Upload</button>
-      </form>
+      <div id="content" class="fade-in">
+        <h1>Upload</h1>
+        <form
+          id="uploadForm"
+          enctype="multipart/form-data"
+          method="POST"
+          action="/upload"
+        >
+          <input type="file" name="images" multiple required />
+          <input
+            type="text"
+            name="tags"
+            placeholder="タグをカンマ区切りで入力"
+            required
+          />
+          <button type="submit">Upload</button>
+        </form>
+      </div>
     </div>
   </body>
 </html>
