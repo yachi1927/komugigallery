@@ -486,6 +486,7 @@ button:hover {
   border: 1px solid #ccc;
   border-radius: 6px;
   margin-bottom: 12px;
+  margin-right: 10px;
 }
 
 /* ボタン */
@@ -500,7 +501,7 @@ button:hover {
 }
 
 #tagEditorSaveBtn {
-  background-color: #4caf50;
+  background-color: #4c6daf;
   color: white;
 }
 
