@@ -185,7 +185,7 @@ app.get("/tag-categories", async (req, res) => {
     const tagsArray = Array.from(allTagsSet);
 
     const categoryRules = {
-      CP: ["akiz", "hiar", "szak", "kmkt"],
+      CP: ["akiz", "hiar", "szak", "kmkt","nekochan","kiroro"],
       Character: [
         "izumi",
         "akiyoshi",
