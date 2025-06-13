@@ -24,17 +24,21 @@ cloudinary.config({
 const uri = process.env.MONGODB_URI;
 const client = new MongoClient(uri);
 
-async function connectDB() {
-  try {
-    await client.connect();
-    console.log("MongoDB connected");
-    return client.db(process.env.MONGODB_DB_NAME); // .envで設定したDB名を使用
-  } catch (err) {
-    console.error("MongoDB connection error:", err);
-    throw err;
-  }
-}
+let dbInstance = null;
 
+async function connectDB() {
+  if (!dbInstance) {
+    try {
+      await client.connect();
+      console.log("MongoDB connected");
+      dbInstance = client.db(process.env.MONGODB_DB_NAME); // 一度だけ接続
+    } catch (err) {
+      console.error("MongoDB connection error:", err);
+      throw err;
+    }
+  }
+  return dbInstance;
+}
 app.use(cors());
 app.use(express.static(path.join(__dirname, "public")));
 app.use(express.json());
