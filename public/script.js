@@ -188,6 +188,7 @@ async function loadCarousel() {
       index = (index + 1) % selected.length;
       inner.style.transform = `translateX(-${index * slideWidth}px)`;
     }, 3000);
+    window.addEventListener("resize", updateSlide);
   } catch (err) {
     console.error(err);
     carousel.textContent = "画像の読み込みに失敗しました";
