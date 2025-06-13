@@ -31,7 +31,7 @@ async function connectDB() {
     try {
       await client.connect();
       console.log("MongoDB connected");
-      dbInstance = client.db(process.env.MONGODB_DB_NAME); // 一度だけ接続
+      dbInstance = client.db(process.env.MONGODB_DB_NAME);
     } catch (err) {
       console.error("MongoDB connection error:", err);
       throw err;
@@ -39,6 +39,7 @@ async function connectDB() {
   }
   return dbInstance;
 }
+
 app.use(cors());
 app.use(express.static(path.join(__dirname, "public")));
 app.use(express.json());
@@ -96,7 +97,7 @@ app.post("/upload", upload.array("images", 10), async (req, res) => {
   }
 });
 
-// ギャラリーデータ取得
+// ギャラリーデータ取得（複数タグAND検索＋ページネーション対応）
 app.get("/gallery-data", async (req, res) => {
   try {
     const db = await connectDB();
@@ -106,9 +107,27 @@ app.get("/gallery-data", async (req, res) => {
     const limit = 10;
     const skip = (page - 1) * limit;
 
-    const totalCount = await collection.countDocuments();
+    // クエリパラメータでtagsをカンマ区切りで受け取る
+    let tags = [];
+    if (req.query.tags) {
+      tags = req.query.tags
+        .split(",")
+        .map((t) => t.trim())
+        .filter(Boolean);
+    }
+
+    // MongoDBのクエリ：AND条件でtags全てを含む
+    let query = {};
+    if (tags.length > 0) {
+      query = {
+        tags: { $all: tags },
+      };
+    }
+
+    const totalCount = await collection.countDocuments(query);
+
     const data = await collection
-      .find()
+      .find(query)
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
@@ -132,32 +151,18 @@ app.get("/gallery-data", async (req, res) => {
   }
 });
 
-async function loadGallery(page = 1) {
-  try {
-    const res = await fetch(`/gallery-data?page=${page}`);
-    if (!res.ok) throw new Error("ギャラリー取得失敗");
-    const json = await res.json();
-
-    displayImages(json.posts, "gallery");
-
-    // ページネーションUIがあれば更新や制御をここに書く
-    console.log(`ページ${json.currentPage} / ${json.totalPages}`);
-  } catch (error) {
-    console.error(error);
-    alert(error.message);
-  }
-}
-
 // タグ一覧取得
 app.get("/tags", async (req, res) => {
   try {
     const db = await connectDB();
     const collection = db.collection("images");
-    const allDocs = await collection
-      .find({}, { projection: { tags: 1 } })
-      .toArray();
+    const allDocs = await collection.find({}, { projection: { tags: 1 } }).toArray();
     const allTagsSet = new Set();
-    allDocs.forEach((doc) => doc.tags.forEach((tag) => allTagsSet.add(tag)));
+    allDocs.forEach((doc) => {
+      if (Array.isArray(doc.tags)) {
+        doc.tags.forEach((tag) => allTagsSet.add(tag));
+      }
+    });
     res.json(Array.from(allTagsSet));
   } catch (error) {
     console.error(error);
@@ -165,7 +170,7 @@ app.get("/tags", async (req, res) => {
   }
 });
 
-// タグ検索
+// タグ検索（部分一致）
 app.get("/search", async (req, res) => {
   try {
     const db = await connectDB();
@@ -220,11 +225,13 @@ app.get("/tag-categories", async (req, res) => {
   try {
     const db = await connectDB();
     const collection = db.collection("images");
-    const allDocs = await collection
-      .find({}, { projection: { tags: 1 } })
-      .toArray();
+    const allDocs = await collection.find({}, { projection: { tags: 1 } }).toArray();
     const allTagsSet = new Set();
-    allDocs.forEach((doc) => doc.tags.forEach((tag) => allTagsSet.add(tag)));
+    allDocs.forEach((doc) => {
+      if (Array.isArray(doc.tags)) {
+        doc.tags.forEach((tag) => allTagsSet.add(tag));
+      }
+    });
     const tagsArray = Array.from(allTagsSet);
 
     const categoryRules = {

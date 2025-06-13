@@ -28,6 +28,7 @@
         <a class="link" href="tags.html">Tag</a>
       </header>
 
+      <div id="tags-container"></div>
       <div id="gallery"></div>
       <div id="pagination"></div>
 
@@ -37,142 +38,171 @@
       </div>
     </div>
 
-<script>
-  const gallery = document.getElementById("gallery");
-  const modal = document.getElementById("modal");
-  const modalContent = document.getElementById("modalContent");
-  const closeBtn = document.getElementById("closeBtn");
+    <script>
+      // 選択中のタグ配列
+      let selectedTags = [];
 
-  const params = new URLSearchParams(location.search);
-  const tag = params.get("tag");
-  const highlightId = params.get("id");
+      // 現在ページ番号
+      let currentPage = 1;
+      let totalPages = 1;
 
-  function renderGallery(data) {
-    gallery.innerHTML = "";
+      // タグ一覧取得して表示（クリックで選択切り替え）
+      async function loadTags() {
+        try {
+          const res = await fetch("/tags");
+          if (!res.ok) throw new Error("タグ取得失敗");
+          const tags = await res.json();
 
-    data.reverse().forEach((post) => {
-      const div = document.createElement("div");
-      div.className = "post";
+          const container = document.getElementById("tags-container");
+          container.innerHTML = "";
 
-      if (highlightId && post.id === highlightId) {
-        div.classList.add("highlight");
-        setTimeout(() => div.scrollIntoView({ behavior: "smooth", block: "center" }), 100);
-      }
+          tags.forEach((tag) => {
+            const tagEl = document.createElement("button");
+            tagEl.textContent = tag;
+            tagEl.className = "tag-btn";
+            tagEl.style.margin = "4px";
+            tagEl.style.padding = "4px 8px";
+            tagEl.style.border = "1px solid #ccc";
+            tagEl.style.cursor = "pointer";
 
-      const thumb = document.createElement("img");
-      thumb.src = post.imageUrls[0];
-      thumb.alt = post.tags.join(", ") || "uploaded image";
-      div.appendChild(thumb);
+            tagEl.addEventListener("click", () => {
+              toggleTag(tag);
+            });
 
-      // ✅ タグをクリック可能なリンクに変更
-      const tagsDiv = document.createElement("div");
-      tagsDiv.className = "post-tags";
-      post.tags.forEach((t) => {
-        const a = document.createElement("a");
-        a.className = "tag";
-        a.href = `?tag=${encodeURIComponent(t)}`;
-        a.textContent = t;
-        tagsDiv.appendChild(a);
-      });
-      div.appendChild(tagsDiv);
+            container.appendChild(tagEl);
+          });
 
-      const editBtn = document.createElement("button");
-      editBtn.textContent = "Edit";
-      editBtn.addEventListener("click", (e) => {
-        e.stopPropagation();
-        const newTags = prompt("新しいタグ（カンマ区切り）", post.tags.join(", "));
-        if (newTags !== null) {
-          updateTags(post.id, newTags);
+          updateTagButtons();
+        } catch (e) {
+          alert(e.message);
         }
-      });
-      div.appendChild(editBtn);
-
-      div.addEventListener("click", () => {
-        modalContent.innerHTML = "";
-        post.imageUrls.forEach((url) => {
-          const img = document.createElement("img");
-          img.src = url;
-          modalContent.appendChild(img);
-        });
-        modal.style.display = "flex";
-      });
-
-      gallery.appendChild(div);
-    });
-  }
-
-  function updateTags(id, newTags) {
-    fetch("/update-tags", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id, tags: newTags }),
-    })
-      .then((res) => {
-        if (!res.ok) throw new Error("更新に失敗しました");
-        return res.json();
-      })
-      .then(() => {
-        alert("タグを更新しました");
-        location.reload();
-      })
-      .catch((err) => {
-        console.error(err);
-        alert("タグ更新に失敗しました");
-      });
-  }
-
-  function fetchGallery(page = 1) {
-    fetch(`/gallery-data?page=${page}`)
-      .then((res) => res.json())
-      .then((data) => {
-        renderGallery(data.posts);
-        renderPagination(data.currentPage, data.totalPages);
-      })
-      .catch((err) => {
-        console.error("画像データ取得失敗:", err);
-        gallery.textContent = "画像データの取得に失敗しました";
-      });
-  }
-
-  function renderPagination(currentPage, totalPages) {
-    const pagination = document.getElementById("pagination");
-    pagination.innerHTML = "";
-
-    for (let i = 1; i <= totalPages; i++) {
-      const btn = document.createElement("button");
-      btn.textContent = i;
-      if (i === currentPage) btn.disabled = true;
-      btn.addEventListener("click", () => {
-        fetchGallery(i);
-      });
-      pagination.appendChild(btn);
-    }
-  }
-
-  closeBtn.addEventListener("click", () => {
-    modal.style.display = "none";
-  });
-
-  modal.addEventListener("click", (e) => {
-    if (e.target === modal) modal.style.display = "none";
-  });
-
-  // ✅ 初期読み込みで tag パラメータがあれば検索、それ以外は通常読み込み
-  window.addEventListener("DOMContentLoaded", async () => {
-    if (tag) {
-      try {
-        const res = await fetch(`/search?tag=${encodeURIComponent(tag)}`);
-        if (!res.ok) throw new Error("検索失敗");
-        const data = await res.json();
-        renderGallery(data);
-      } catch (err) {
-        console.error(err);
-        gallery.textContent = "画像の取得に失敗しました";
       }
-    } else {
-      fetchGallery();
-    }
-  });
-</script>
+
+      // タグ選択切り替え
+      function toggleTag(tag) {
+        const idx = selectedTags.indexOf(tag);
+        if (idx >= 0) {
+          selectedTags.splice(idx, 1);
+        } else {
+          selectedTags.push(tag);
+        }
+        currentPage = 1; // タグ切り替え時は1ページ目に戻る
+        updateTagButtons();
+        loadGallery(currentPage);
+      }
+
+      // タグボタンの選択状態を更新
+      function updateTagButtons() {
+        const buttons = document.querySelectorAll("#tags-container .tag-btn");
+        buttons.forEach((btn) => {
+          if (selectedTags.includes(btn.textContent)) {
+            btn.style.backgroundColor = "#007bff";
+            btn.style.color = "white";
+          } else {
+            btn.style.backgroundColor = "";
+            btn.style.color = "";
+          }
+        });
+      }
+
+      // ギャラリー表示
+      function displayImages(posts) {
+        const container = document.getElementById("gallery");
+        container.innerHTML = "";
+
+        if (posts.length === 0) {
+          container.textContent = "該当する画像がありません";
+          return;
+        }
+
+        posts.forEach((post) => {
+          const div = document.createElement("div");
+          div.style.display = "inline-block";
+          div.style.margin = "8px";
+          div.style.border = "1px solid #ddd";
+          div.style.padding = "4px";
+
+          // 画像が複数あれば最初の1枚だけ表示（必要に応じて調整可）
+          const img = document.createElement("img");
+          img.src = post.imageUrls[0];
+          img.style.width = "150px";
+          img.style.height = "150px";
+          img.style.objectFit = "cover";
+          img.alt = post.tags.join(", ");
+
+          div.appendChild(img);
+          container.appendChild(div);
+        });
+      }
+
+      // ページネーション表示・制御
+      function renderPagination() {
+        const container = document.getElementById("pagination");
+        container.innerHTML = "";
+
+        if (totalPages <= 1) return;
+
+        // 「前」ボタン
+        const prevBtn = document.createElement("button");
+        prevBtn.textContent = "前";
+        prevBtn.disabled = currentPage === 1;
+        prevBtn.addEventListener("click", () => {
+          if (currentPage > 1) {
+            currentPage--;
+            loadGallery(currentPage);
+          }
+        });
+        container.appendChild(prevBtn);
+
+        // ページ番号表示（例: 1 / 5）
+        const pageInfo = document.createElement("span");
+        pageInfo.textContent = ` ${currentPage} / ${totalPages} `;
+        pageInfo.style.margin = "0 8px";
+        container.appendChild(pageInfo);
+
+        // 「次」ボタン
+        const nextBtn = document.createElement("button");
+        nextBtn.textContent = "次";
+        nextBtn.disabled = currentPage === totalPages;
+        nextBtn.addEventListener("click", () => {
+          if (currentPage < totalPages) {
+            currentPage++;
+            loadGallery(currentPage);
+          }
+        });
+        container.appendChild(nextBtn);
+      }
+
+      // ギャラリーの画像をAPIから取得して表示
+      async function loadGallery(page = 1) {
+        try {
+          // タグをカンマ区切り文字列に
+          const tagsParam = selectedTags.join(",");
+          let url = `/gallery-data?page=${page}`;
+          if (tagsParam) {
+            url += `&tags=${encodeURIComponent(tagsParam)}`;
+          }
+
+          const res = await fetch(url);
+          if (!res.ok) throw new Error("ギャラリー取得失敗");
+
+          const json = await res.json();
+
+          displayImages(json.posts);
+          currentPage = json.currentPage;
+          totalPages = json.totalPages;
+
+          renderPagination();
+        } catch (e) {
+          alert(e.message);
+        }
+      }
+
+      // 初期処理
+      window.onload = () => {
+        loadTags();
+        loadGallery();
+      };
+    </script>
   </body>
 </html>
