@@ -4,17 +4,63 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link href="style.css" rel="stylesheet" type="text/css" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@300&display=swap"
-      rel="stylesheet"
-    />
-    <link
-      rel="shortcut icon"
-      href="https://lh3.googleusercontent.com/pw/AP1GczPcJnyP0x_e-ArxvuH50PLBFqGn4dq7pzgJfQN0_cF0OxTV7zMig3DPR8dH5ccuGHR2bITDWkDXbW6BYiMV5s87goBdnS2bXSqx7ALgkwtD-f46vx9tOGUBEGpTKfPacQvSBc9OCO3yWIsiINsMidMbFA=w512-h512-s-no-gm?authuser=0"
-    />
     <title>Gallery</title>
+    <style>
+      #gallery {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 16px;
+        padding: 16px;
+      }
+
+      .image-card {
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        overflow: hidden;
+        width: 180px;
+        text-align: center;
+        background-color: #fff;
+        box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.1);
+        transition: transform 0.2s;
+      }
+
+      .image-card:hover {
+        transform: scale(1.03);
+      }
+
+      .image-card img {
+        width: 100%;
+        height: 180px;
+        object-fit: cover;
+      }
+
+      #pagination {
+        text-align: center;
+        margin: 20px;
+      }
+
+      #tags-container {
+        text-align: center;
+        padding: 10px;
+      }
+
+      .tag-btn {
+        margin: 4px;
+        padding: 6px 12px;
+        border: 1px solid #aaa;
+        border-radius: 20px;
+        cursor: pointer;
+        background: white;
+        transition: background 0.2s;
+      }
+
+      .tag-btn.selected {
+        background: #007bff;
+        color: white;
+        border-color: #007bff;
+      }
+    </style>
   </head>
   <body>
     <div class="bg">
@@ -28,11 +74,6 @@
       <div id="tags-container"></div>
       <div id="gallery"></div>
       <div id="pagination"></div>
-
-      <div class="modal" id="modal">
-        <div class="modal-content" id="modalContent"></div>
-        <button class="close-btn" id="closeBtn">Close</button>
-      </div>
     </div>
 
     <script>
@@ -52,11 +93,7 @@
             btn.className = "tag-btn";
             btn.textContent = tag;
             btn.addEventListener("click", () => {
-              if (selectedTag === tag) {
-                selectedTag = null;
-              } else {
-                selectedTag = tag;
-              }
+              selectedTag = selectedTag === tag ? null : tag;
               currentPage = 1;
               updateTagButtons();
               loadGallery(currentPage);
@@ -142,7 +179,6 @@
           if (selectedTag) {
             url += `&tag=${encodeURIComponent(selectedTag)}`;
           }
-
           const res = await fetch(url);
           const json = await res.json();
 
