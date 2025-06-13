@@ -115,7 +115,7 @@ button:hover {
   justify-content: center;
 }
 
-.card {
+.image-card {
   background: white;
   border: 1px solid #ddd;
   border-radius: 8px;
@@ -125,13 +125,13 @@ button:hover {
   box-sizing: border-box;
 }
 
-.card img {
+.image-card img {
   width: 100%;
   height: auto;
   border-radius: 4px;
 }
 
-.card p {
+.image-card p {
   font-size: 0.9rem;
   color: #555;
   margin-top: 6px;
@@ -139,7 +139,7 @@ button:hover {
 }
 
 @media (max-width: 600px) {
-  .card {
+  .image-card {
     width: 100%;
   }
 }
