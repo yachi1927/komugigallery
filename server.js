@@ -1,5 +1,5 @@
-if (process.env.NODE_ENV !== 'production') {
-  require('dotenv').config();
+if (process.env.NODE_ENV !== "production") {
+  require("dotenv").config();
 }
 
 console.log("Cloudinary Cloud Name:", process.env.CLOUDINARY_CLOUD_NAME);
@@ -41,6 +41,10 @@ const upload = multer({ storage });
 
 // 画像アップロード
 app.post("/upload", upload.array("images", 10), async (req, res) => {
+  console.log("アップロード開始");
+  console.log("受け取ったファイル数:", req.files?.length);
+  console.log("受け取ったタグ:", req.body.tags);
+
   const tags = req.body.tags
     ? req.body.tags
         .split(",")
@@ -51,7 +55,6 @@ app.post("/upload", upload.array("images", 10), async (req, res) => {
   if (!req.files || req.files.length === 0) {
     return res.status(400).send("画像が選択されていません");
   }
-
   try {
     // Cloudinaryにアップロード
     const uploadPromises = req.files.map((file) => {
@@ -156,8 +159,8 @@ app.get("/tag-categories", (req, res) => {
   const tagsArray = Array.from(allTags);
 
   const categoryRules = {
-    CP: ["akiz", "hiar"],
-    Character: ["izumi", "akiyoshi", "aruwo", "hisanobu"],
+    CP: ["akiz", "hiar","szak"],
+    Character: ["izumi", "akiyoshi", "aruwo", "hisanobu","akiko","suzui"],
     Date: tagsArray.filter(
       (tag) => /\d{4}\/\d{2}/.test(tag) || /\d{4}年/.test(tag)
     ),
