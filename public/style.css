@@ -356,13 +356,15 @@ button:hover {
     color: white;
   }
 
-  /* 最初は透明 */
-.fade-in {
+/* 初期状態：透明で少し下にずらしておく */
+#content {
   opacity: 0;
-  transition: opacity 1s ease-in-out;
+  transform: translateY(20px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
 }
 
-/* フェードイン後 */
-.fade-in.visible {
+/* visibleクラスがついたらフェードイン＆元の位置に戻る */
+#content.visible {
   opacity: 1;
+  transform: translateY(0);
 }
