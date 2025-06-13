@@ -351,8 +351,27 @@ button:hover {
   cursor: pointer;
 }
 
-.tag-btn.selected {
-    background-color: #4b83bf;
-    color: white;
-  }
+#tags-container {
+  display: flex;
+  flex-wrap: wrap;       /* 折り返しを有効にする */
+  justify-content: center;
+  gap: 8px;              /* ボタン間の隙間 */
+  margin: 20px auto;
+  max-width: 90%;
+}
 
+.tag-btn {
+  margin: 4px;
+  padding: 6px 12px;
+  border: 1px solid #aaa;
+  border-radius: 20px;
+  cursor: pointer;
+  background: white;
+  transition: background 0.2s;
+  white-space: nowrap; /* ボタン内のテキスト折り返し防止 */
+}
+
+.tag-btn.selected {
+  background-color: #4b83bf;
+  color: white;
+}
