@@ -179,6 +179,10 @@ button:hover {
   color: #000;
 }
 
+.menu-dropdown button:hover {
+  background-color: #eee;
+}
+
 #gallery {
   display: flex;
   flex-wrap: wrap;
