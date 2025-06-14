@@ -527,3 +527,34 @@ button:hover {
   border-radius: 4px;
   cursor: pointer;
 }
+
+/* メニュー */
+.menu-dropdown {
+  background: white;
+  border: 1px solid #ccc;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  position: absolute;
+  top: 100%;
+  right: 0;
+  min-width: 120px;
+  z-index: 10;
+}
+.menu-dropdown button {
+  width: 100%;
+  padding: 6px 10px;
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+}
+.menu-wrapper {
+  position: relative;
+  display: inline-block;
+}
+.menu-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 20px;
+  user-select: none;
+}
