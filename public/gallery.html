@@ -171,6 +171,30 @@
           card.appendChild(menuBtn);
           gallery.appendChild(card);
         });
+
+        // 削除ボタンの作成
+        const deleteBtn = document.createElement("button");
+        deleteBtn.className = "delete-btn";
+        deleteBtn.textContent = "Delete";
+        deleteBtn.addEventListener("click", async (e) => {
+          e.stopPropagation();
+          const confirmed = confirm("本当にこの画像を削除しますか？");
+          if (!confirmed) return;
+
+          try {
+            const res = await fetch("/delete-post", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ id: post.id }),
+            });
+            if (!res.ok) throw new Error(await res.text());
+            alert("画像を削除しました");
+            loadGallery(currentPage); // 再読み込みでUI更新
+          } catch (err) {
+            alert("削除に失敗しました: " + err.message);
+          }
+        });
+        card.appendChild(deleteBtn);
       }
 
       // モーダル開く関数

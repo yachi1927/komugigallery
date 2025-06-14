@@ -97,6 +97,38 @@ app.post("/upload", upload.array("images", 10), async (req, res) => {
   }
 });
 
+app.delete("/delete/:id", async (req, res) => {
+  try {
+    const db = await connectDB();
+    const collection = db.collection("images");
+    const { id } = req.params;
+
+    // まずMongoDBから画像データを取得
+    const doc = await collection.findOne({ _id: new ObjectId(id) });
+    if (!doc) return res.status(404).send("画像が見つかりません");
+
+    // Cloudinaryから画像削除（複数画像対応）
+    const deletePromises = doc.imageUrls.map((url) => {
+      // 公開IDを抽出（例： https://res.cloudinary.com/xxx/image/upload/v12345678/komugigallery/abc.jpg → komugigallery/abc）
+      const parts = url.split("/");
+      const publicIdWithExt = parts.slice(-2).join("/"); // komugigallery/abc.jpg
+      const publicId = publicIdWithExt.replace(/\.[^/.]+$/, ""); // 拡張子を除去
+
+      return cloudinary.uploader.destroy(publicId);
+    });
+
+    await Promise.all(deletePromises);
+
+    // MongoDBからドキュメント削除
+    await collection.deleteOne({ _id: new ObjectId(id) });
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error("削除失敗:", error);
+    res.status(500).send("削除に失敗しました");
+  }
+});
+
 // 修正済み ギャラリーデータ取得（タグ絞り込み対応）
 app.get("/gallery-data", async (req, res) => {
   try {
