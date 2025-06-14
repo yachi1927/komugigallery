@@ -148,6 +148,7 @@
         posts.forEach((post) => {
           const card = document.createElement("div");
           card.className = "image-card";
+          card.style.position = "relative"; // メニューの絶対位置指定のため
 
           const img = document.createElement("img");
           img.src = post.imageUrls[0];
@@ -157,19 +158,86 @@
             openModal(post.imageUrls);
           });
 
-          // 縦3点リーダーボタン作成
+          // 3点リーダーボタン
           const menuBtn = document.createElement("button");
           menuBtn.className = "menu-btn";
           menuBtn.textContent = "︙";
-          // クリックイベント（画像クリックイベントに影響しないようstopPropagation）
-          menuBtn.addEventListener("click", (e) => {
+          menuBtn.style.cursor = "pointer";
+          menuBtn.style.position = "absolute";
+          menuBtn.style.top = "5px";
+          menuBtn.style.right = "5px";
+          menuBtn.style.background = "transparent";
+          menuBtn.style.border = "none";
+          menuBtn.style.fontSize = "20px";
+
+          // メニュー本体（初期は非表示）
+          const menuDropdown = document.createElement("div");
+          menuDropdown.className = "menu-dropdown";
+          menuDropdown.style.position = "absolute";
+          menuDropdown.style.top = "30px";
+          menuDropdown.style.right = "5px";
+          menuDropdown.style.background = "white";
+          menuDropdown.style.border = "1px solid #ccc";
+          menuDropdown.style.boxShadow = "0 2px 6px rgba(0,0,0,0.2)";
+          menuDropdown.style.display = "none";
+          menuDropdown.style.zIndex = "100";
+          menuDropdown.style.minWidth = "80px";
+
+          // 削除ボタン
+          const deleteBtn = document.createElement("button");
+          deleteBtn.textContent = "削除";
+          deleteBtn.style.width = "100%";
+          deleteBtn.style.padding = "6px 10px";
+          deleteBtn.style.border = "none";
+          deleteBtn.style.background = "transparent";
+          deleteBtn.style.cursor = "pointer";
+          deleteBtn.style.textAlign = "left";
+
+          deleteBtn.addEventListener("click", async (e) => {
             e.stopPropagation();
-            openTagEditor(post);
+            if (confirm("本当に削除しますか？")) {
+              try {
+                const res = await fetch("/delete-post", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ id: post.id }),
+                });
+                if (!res.ok) throw new Error("削除に失敗しました");
+                alert("削除しました");
+                loadGallery(currentPage);
+              } catch (error) {
+                alert(error.message);
+              }
+            }
+            menuDropdown.style.display = "none"; // メニュー閉じる
           });
 
+          menuDropdown.appendChild(deleteBtn);
+
+          // 3点リーダーボタンを押したらメニューの表示切替
+          menuBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            // すべてのメニューを閉じる
+            document.querySelectorAll(".menu-dropdown").forEach((menu) => {
+              if (menu !== menuDropdown) menu.style.display = "none";
+            });
+            menuDropdown.style.display =
+              menuDropdown.style.display === "none" ? "block" : "none";
+          });
+
+          // メニュー・ボタンをカードに追加
           card.appendChild(img);
           card.appendChild(menuBtn);
+          card.appendChild(menuDropdown);
+
           gallery.appendChild(card);
+        });
+
+        // ページ内のクリックで全メニュー閉じる
+        document.addEventListener("click", () => {
+          document.querySelectorAll(".menu-dropdown").forEach((menu) => {
+            menu.style.display = "none";
+          });
         });
       }
 
