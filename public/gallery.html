@@ -49,26 +49,93 @@
     </div>
 
     <script>
+      let selectedTag = null;
       let currentPage = 1;
       let totalPages = 1;
-      let editingPost = null; // 編集対象の画像情報
 
-      // ギャラリー画像データ取得API
-      async function loadGallery(page = 1) {
+      let modal = null;
+      let carousel = null;
+      let modalCloseBtn = null;
+      let prevBtn = null;
+      let nextBtn = null;
+      let currentSlide = 0;
+      let currentImages = [];
+
+      // --- タグ編集モーダル用要素 ---
+      let tagEditorModal = null;
+      let tagEditorInput = null;
+      let tagEditorSaveBtn = null;
+      let tagEditorCancelBtn = null;
+      let editingPost = null; // 現在編集中のpost
+
+      // URLからtagパラメータを取得
+      function getTagFromURL() {
+        const params = new URLSearchParams(window.location.search);
+        return params.get("tag");
+      }
+
+      // URLからpageパラメータを取得
+      function getPageFromURL() {
+        const params = new URLSearchParams(window.location.search);
+        const p = parseInt(params.get("page"), 10);
+        return isNaN(p) || p < 1 ? 1 : p;
+      }
+
+      // URLのqueryパラメータを書き換え（履歴に追加）
+      function updateURL() {
+        const params = new URLSearchParams();
+        if (selectedTag) params.set("tag", selectedTag);
+        if (currentPage > 1) params.set("page", currentPage);
+        const newUrl =
+          window.location.pathname +
+          (params.toString() ? `?${params.toString()}` : "");
+        history.pushState(null, "", newUrl);
+      }
+
+      // タグ取得してボタン表示
+      async function loadTags() {
         try {
-          const res = await fetch(`/gallery-data?page=${page}`);
-          if (!res.ok) throw new Error("ギャラリーの取得に失敗しました");
-          const json = await res.json();
+          const res = await fetch("/tags");
+          if (!res.ok) throw new Error("タグの取得に失敗しました");
+          const tags = await res.json();
 
-          displayImages(json.posts);
-          currentPage = json.currentPage;
-          totalPages = json.totalPages;
+          const container = document.getElementById("tags-container");
+          container.innerHTML = "";
+
+          tags.forEach((tag) => {
+            const btn = document.createElement("button");
+            btn.className = "tag-btn";
+            btn.textContent = tag;
+            btn.addEventListener("click", () => {
+              selectedTag = selectedTag === tag ? null : tag;
+              currentPage = 1;
+              updateTagButtons();
+              updateURL();
+              loadGallery(currentPage);
+            });
+            container.appendChild(btn);
+          });
+
+          updateTagButtons();
         } catch (e) {
           alert(e.message);
         }
       }
 
-      // 画像カード生成と表示
+      // 選択タグのボタン状態を更新
+      function updateTagButtons() {
+        const buttons = document.querySelectorAll(".tag-btn");
+        buttons.forEach((btn) => {
+          if (btn.textContent === selectedTag) {
+            btn.classList.add("selected");
+          } else {
+            btn.classList.remove("selected");
+          }
+        });
+      }
+
+      // 画像をカード形式で表示、クリックでモーダルを開く
+      // 【縦3点リーダーボタンも追加】
       function displayImages(posts) {
         const gallery = document.getElementById("gallery");
         gallery.innerHTML = "";
@@ -81,109 +148,157 @@
         posts.forEach((post) => {
           const card = document.createElement("div");
           card.className = "image-card";
-          card.style.border = "1px solid #ccc";
-          card.style.margin = "10px";
-          card.style.padding = "10px";
-          card.style.position = "relative";
-          card.style.display = "inline-block";
 
           const img = document.createElement("img");
           img.src = post.imageUrls[0];
           img.alt = post.tags.join(", ");
-          img.style.width = "200px";
-          img.style.height = "auto";
-          card.appendChild(img);
 
-          // メニューラッパー
-          const menuWrapper = document.createElement("div");
-          menuWrapper.className = "menu-wrapper";
+          img.addEventListener("click", () => {
+            openModal(post.imageUrls);
+          });
 
-          // ⋮ ボタン
+          // 縦3点リーダーボタン作成
           const menuBtn = document.createElement("button");
           menuBtn.className = "menu-btn";
           menuBtn.textContent = "︙";
-
-          // メニュー本体
-          const menuDropdown = document.createElement("div");
-          menuDropdown.className = "menu-dropdown";
-          menuDropdown.style.display = "none";
-
-          // 削除ボタン
-          const deleteOption = document.createElement("button");
-          deleteOption.textContent = "削除";
-          deleteOption.addEventListener("click", async (e) => {
-            e.stopPropagation();
-            if (!confirm("本当にこの画像を削除しますか？")) return;
-
-            try {
-              const res = await fetch("/delete-post", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ id: post.id }),
-              });
-              if (!res.ok) throw new Error(await res.text());
-              alert("画像を削除しました");
-              loadGallery(currentPage);
-            } catch (err) {
-              alert("削除に失敗しました: " + err.message);
-            }
-          });
-
-          // タグ編集ボタン
-          const editOption = document.createElement("button");
-          editOption.textContent = "タグ編集";
-          editOption.addEventListener("click", (e) => {
-            e.stopPropagation();
-            openTagEditor(post);
-            menuDropdown.style.display = "none";
-          });
-
-          // メニューの開閉
+          // クリックイベント（画像クリックイベントに影響しないようstopPropagation）
           menuBtn.addEventListener("click", (e) => {
             e.stopPropagation();
-            menuDropdown.style.display =
-              menuDropdown.style.display === "none" ? "block" : "none";
+            openTagEditor(post);
           });
 
-          // メニュー外クリックで閉じる
-          document.addEventListener("click", (e) => {
-            if (!menuWrapper.contains(e.target)) {
-              menuDropdown.style.display = "none";
-            }
-          });
-
-          menuDropdown.appendChild(editOption);
-          menuDropdown.appendChild(deleteOption);
-          menuWrapper.appendChild(menuBtn);
-          menuWrapper.appendChild(menuDropdown);
-
-          card.appendChild(menuWrapper);
+          card.appendChild(img);
+          card.appendChild(menuBtn);
           gallery.appendChild(card);
         });
       }
 
-      // タグ編集モーダル要素
-      const tagEditorModal = document.getElementById("tagEditorModal");
-      const tagEditorInput = document.getElementById("tagEditorInput");
-      const tagEditorSaveBtn = document.getElementById("tagEditorSaveBtn");
-      const tagEditorCancelBtn = document.getElementById("tagEditorCancelBtn");
+      // モーダル開く関数
+      function openModal(images) {
+        currentImages = images;
+        currentSlide = 0;
+        renderCarousel();
+        modal.classList.add("active");
+        updateNavButtons();
+      }
 
-      // タグ編集モーダルを開く
+      // カルーセル描画
+      function renderCarousel() {
+        // 画像を並べた横長のラッパーを作る
+        const track = document.createElement("div");
+        track.className = "carousel-track";
+
+        currentImages.forEach((src) => {
+          const img = document.createElement("img");
+          img.src = src;
+          track.appendChild(img);
+        });
+
+        // トラックを表示位置に合わせてスライド
+        track.style.transform = `translateX(-${currentSlide * 100}%)`;
+
+        // 既存のcarousel要素を置き換え
+        carousel.innerHTML = "";
+        carousel.appendChild(track);
+      }
+      // ナビボタンの状態更新（1枚なら非表示）
+      function updateNavButtons() {
+        if (currentImages.length <= 1) {
+          prevBtn.style.display = "none";
+          nextBtn.style.display = "none";
+        } else {
+          prevBtn.style.display = "inline-block";
+          nextBtn.style.display = "inline-block";
+        }
+      }
+
+      // ナビ操作
+      function showPrev() {
+        if (currentSlide > 0) {
+          currentSlide--;
+          renderCarousel();
+        }
+      }
+      function showNext() {
+        if (currentSlide < currentImages.length - 1) {
+          currentSlide++;
+          renderCarousel();
+        }
+      }
+
+      // モーダル閉じる
+      function closeModal() {
+        modal.classList.remove("active");
+      }
+
+      // ページネーションの描画
+      function renderPagination() {
+        const container = document.getElementById("pagination");
+        container.innerHTML = "";
+
+        if (totalPages <= 1) return;
+
+        const prevBtn = document.createElement("button");
+        prevBtn.textContent = "Back";
+        prevBtn.disabled = currentPage === 1;
+        prevBtn.onclick = () => {
+          if (currentPage > 1) {
+            currentPage--;
+            updateURL();
+            loadGallery(currentPage);
+          }
+        };
+        container.appendChild(prevBtn);
+
+        const nextBtn = document.createElement("button");
+        nextBtn.textContent = "Next";
+        nextBtn.disabled = currentPage === totalPages;
+        nextBtn.onclick = () => {
+          if (currentPage < totalPages) {
+            currentPage++;
+            updateURL();
+            loadGallery(currentPage);
+          }
+        };
+        container.appendChild(nextBtn);
+      }
+
+      // ギャラリー読み込み（タグ1つだけ送る）
+      async function loadGallery(page = 1) {
+        try {
+          let url = `/gallery-data?page=${page}`;
+          if (selectedTag) {
+            url += `&tag=${encodeURIComponent(selectedTag)}`;
+          }
+          const res = await fetch(url);
+          if (!res.ok) throw new Error("ギャラリーの取得に失敗しました");
+          const json = await res.json();
+
+          displayImages(json.posts);
+          currentPage = json.currentPage;
+          totalPages = json.totalPages;
+          renderPagination();
+        } catch (e) {
+          alert(e.message);
+        }
+      }
+
+      // ------------- タグ編集モーダルの制御 ---------------
+
+      // モーダルを開く（postオブジェクトを渡す）
       function openTagEditor(post) {
         editingPost = post;
         tagEditorInput.value = post.tags.join(", ");
         tagEditorModal.classList.add("active");
-        tagEditorInput.focus();
       }
 
-      // タグ編集モーダルを閉じる
+      // モーダルを閉じる
       function closeTagEditor() {
         tagEditorModal.classList.remove("active");
         editingPost = null;
-        tagEditorInput.value = "";
       }
 
-      // タグ保存処理
+      // 保存ボタン（タグ更新APIを呼ぶ）
       async function saveTags() {
         if (!editingPost) return;
 
@@ -195,41 +310,82 @@
         try {
           const res = await fetch("/update-tags", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: {
+              "Content-Type": "application/json",
+            },
             body: JSON.stringify({
               id: editingPost.id,
-              tags: newTags, // 配列で送る場合はここでjoinしない
+              tags: newTags.join(","),
             }),
           });
-          if (!res.ok) throw new Error(await res.text());
 
-          editingPost.tags = newTags; // ローカルデータ更新
+          if (!res.ok) {
+            const text = await res.text();
+            throw new Error(text || "タグ更新に失敗しました");
+          }
+
+          editingPost.tags = newTags; // ローカル更新
           alert("タグを更新しました: " + newTags.join(", "));
           closeTagEditor();
-          loadGallery(currentPage);
-        } catch (err) {
-          alert("タグ更新に失敗しました: " + err.message);
+          loadGallery(currentPage); // UIを再読み込み
+        } catch (error) {
+          alert(error.message);
         }
       }
 
-      // イベントリスナーセットアップ
-      tagEditorSaveBtn.addEventListener("click", saveTags);
-      tagEditorCancelBtn.addEventListener("click", closeTagEditor);
+      window.onload = async () => {
+        selectedTag = getTagFromURL();
+        currentPage = getPageFromURL();
+        await loadTags();
+        updateTagButtons();
+        await loadGallery(currentPage);
 
-      // モーダルの背景クリックで閉じる
-      tagEditorModal.addEventListener("click", (e) => {
-        if (e.target === tagEditorModal) closeTagEditor();
-      });
+        modal = document.getElementById("modal");
+        carousel = document.getElementById("carousel");
+        modalCloseBtn = document.getElementById("modalClose");
+        prevBtn = document.getElementById("prevBtn");
+        nextBtn = document.getElementById("nextBtn");
 
-      // ESCキーで閉じる
-      window.addEventListener("keydown", (e) => {
-        if (e.key === "Escape" && tagEditorModal.classList.contains("active")) {
-          closeTagEditor();
-        }
-      });
+        // タグ編集モーダル要素取得
+        tagEditorModal = document.getElementById("tagEditorModal");
+        tagEditorInput = document.getElementById("tagEditorInput");
+        tagEditorSaveBtn = document.getElementById("tagEditorSaveBtn");
+        tagEditorCancelBtn = document.getElementById("tagEditorCancelBtn");
 
-      // 初期読み込み
-      window.onload = () => {
+        modalCloseBtn.addEventListener("click", closeModal);
+        prevBtn.addEventListener("click", showPrev);
+        nextBtn.addEventListener("click", showNext);
+
+        tagEditorSaveBtn.addEventListener("click", saveTags);
+        tagEditorCancelBtn.addEventListener("click", closeTagEditor);
+
+        // モーダル外クリックでタグ編集モーダル閉じる
+        tagEditorModal.addEventListener("click", (e) => {
+          if (e.target === tagEditorModal) closeTagEditor();
+        });
+
+        window.addEventListener("keydown", (e) => {
+          if (e.key === "Escape") {
+            if (modal.classList.contains("active")) closeModal();
+            if (tagEditorModal.classList.contains("active")) closeTagEditor();
+          }
+        });
+        const toggleBtn = document.getElementById("toggleTagsBtn");
+        const tagsContainer = document.getElementById("tags-container");
+
+        toggleBtn.addEventListener("click", () => {
+          tagsContainer.classList.toggle("hidden");
+          toggleBtn.textContent = tagsContainer.classList.contains("hidden")
+            ? "Open"
+            : "Close";
+        });
+      };
+
+      // ブラウザの戻る・進むに対応
+      window.onpopstate = () => {
+        selectedTag = getTagFromURL();
+        currentPage = getPageFromURL();
+        updateTagButtons();
         loadGallery(currentPage);
       };
     </script>
