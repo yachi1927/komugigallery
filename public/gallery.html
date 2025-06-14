@@ -157,46 +157,97 @@
             openModal(post.imageUrls);
           });
 
-          // 縦3点リーダーボタン作成
+          // メニューラッパー
+          const menuWrapper = document.createElement("div");
+          menuWrapper.className = "menu-wrapper";
+          menuWrapper.style.position = "relative";
+
+          // ⋮ ボタン
           const menuBtn = document.createElement("button");
           menuBtn.className = "menu-btn";
           menuBtn.textContent = "︙";
-          // クリックイベント（画像クリックイベントに影響しないようstopPropagation）
-          menuBtn.addEventListener("click", (e) => {
+          menuBtn.style.cursor = "pointer";
+
+          // メニュー本体
+          const menuDropdown = document.createElement("div");
+          menuDropdown.className = "menu-dropdown";
+          menuDropdown.style.display = "none";
+          menuDropdown.style.position = "absolute";
+          menuDropdown.style.top = "100%";
+          menuDropdown.style.right = "0";
+          menuDropdown.style.background = "#fff";
+          menuDropdown.style.border = "1px solid #ccc";
+          menuDropdown.style.padding = "5px";
+          menuDropdown.style.zIndex = "10";
+          menuDropdown.style.minWidth = "100px";
+          menuDropdown.style.boxShadow = "0 2px 6px rgba(0,0,0,0.2)";
+
+          // 削除ボタン
+          const deleteOption = document.createElement("button");
+          deleteOption.textContent = "削除";
+          deleteOption.style.width = "100%";
+          deleteOption.style.background = "none";
+          deleteOption.style.border = "none";
+          deleteOption.style.textAlign = "left";
+          deleteOption.style.cursor = "pointer";
+          deleteOption.addEventListener("click", async (e) => {
             e.stopPropagation();
-            openTagEditor(post);
+            const confirmed = confirm("本当にこの画像を削除しますか？");
+            if (!confirmed) return;
+
+            try {
+              const res = await fetch("/delete-post", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ id: post.id }),
+              });
+              if (!res.ok) throw new Error(await res.text());
+              alert("画像を削除しました");
+              loadGallery(currentPage);
+            } catch (err) {
+              alert("削除に失敗しました: " + err.message);
+            }
           });
 
+          // タグ編集ボタン
+          const editOption = document.createElement("button");
+          editOption.textContent = "タグ編集";
+          editOption.style.width = "100%";
+          editOption.style.background = "none";
+          editOption.style.border = "none";
+          editOption.style.textAlign = "left";
+          editOption.style.cursor = "pointer";
+          editOption.addEventListener("click", (e) => {
+            e.stopPropagation();
+            openTagEditor(post);
+            menuDropdown.style.display = "none"; // 開いたら閉じる
+          });
+
+          // メニュー展開
+          menuBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            menuDropdown.style.display =
+              menuDropdown.style.display === "none" ? "block" : "none";
+          });
+
+          // 外部クリックでメニュー閉じる
+          document.addEventListener("click", (e) => {
+            if (!menuWrapper.contains(e.target)) {
+              menuDropdown.style.display = "none";
+            }
+          });
+
+          // 構成
+          menuDropdown.appendChild(editOption);
+          menuDropdown.appendChild(deleteOption);
+          menuWrapper.appendChild(menuBtn);
+          menuWrapper.appendChild(menuDropdown);
+
           card.appendChild(img);
-          card.appendChild(menuBtn);
+          card.appendChild(menuWrapper);
           gallery.appendChild(card);
         });
-
-        // 削除ボタンの作成
-        const deleteBtn = document.createElement("button");
-        deleteBtn.className = "delete-btn";
-        deleteBtn.textContent = "Delete";
-        deleteBtn.addEventListener("click", async (e) => {
-          e.stopPropagation();
-          const confirmed = confirm("本当にこの画像を削除しますか？");
-          if (!confirmed) return;
-
-          try {
-            const res = await fetch("/delete-post", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ id: post.id }),
-            });
-            if (!res.ok) throw new Error(await res.text());
-            alert("画像を削除しました");
-            loadGallery(currentPage); // 再読み込みでUI更新
-          } catch (err) {
-            alert("削除に失敗しました: " + err.message);
-          }
-        });
-        card.appendChild(deleteBtn);
       }
-
       // モーダル開く関数
       function openModal(images) {
         currentImages = images;
