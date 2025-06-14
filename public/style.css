@@ -518,16 +518,3 @@ button:hover {
     padding: 6px 12px;
   }
 }
-
-.delete-btn {
-  position: absolute;
-  top: 5px;
-  right: 5px;
-  background: #7b59a4;
-  color: white;
-  border: none;
-  padding: 4px 8px;
-  font-size: 0.8rem;
-  border-radius: 4px;
-  cursor: pointer;
-}

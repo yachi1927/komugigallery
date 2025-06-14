@@ -212,6 +212,24 @@
             menuDropdown.style.display = "none"; // メニュー閉じる
           });
 
+          // 3点リーダーメニューに追加（削除ボタンの上あたりに）
+          const editBtn = document.createElement("button");
+          editBtn.textContent = "タグ編集";
+          editBtn.style.width = "100%";
+          editBtn.style.padding = "6px 10px";
+          editBtn.style.border = "none";
+          editBtn.style.background = "transparent";
+          editBtn.style.cursor = "pointer";
+          editBtn.style.textAlign = "left";
+
+          editBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            openTagEditor(post);
+            menuDropdown.style.display = "none"; // メニュー閉じる
+          });
+
+          menuDropdown.insertBefore(editBtn, deleteBtn);
+
           menuDropdown.appendChild(deleteBtn);
 
           // 3点リーダーボタンを押したらメニューの表示切替
