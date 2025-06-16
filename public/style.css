@@ -523,7 +523,7 @@ button:hover {
   position: absolute;
   top: 5px;
   right: 5px;
-  background: rgb(219, 121, 121);
+  background: rgba(219, 121, 121,0.5);
   color: white;
   border: none;
   padding: 4px;
