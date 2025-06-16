@@ -5,7 +5,6 @@ if (process.env.NODE_ENV !== "production") {
 const express = require("express");
 const multer = require("multer");
 const { v2: cloudinary } = require("cloudinary");
-const { Readable } = require("stream");
 const path = require("path");
 const cors = require("cors");
 const { MongoClient, ObjectId } = require("mongodb");
