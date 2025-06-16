@@ -10,6 +10,8 @@ import dotenv from "dotenv";
 import { fileURLToPath } from "url";
 import cloudinary from "cloudinary";
 
+app.use(express.static(path.join(__dirname, "public")));
+
 // __dirnameを使うための準備 (ESM用)
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
