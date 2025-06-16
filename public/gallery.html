@@ -61,7 +61,8 @@
       let currentSlide = 0;
       let currentImages = [];
 
-      localStorage.setItem("token", token);
+      // 管理者判定フラグ（適宜セットしてください）
+      const isAdmin = true; // ここは実際の認証状態に合わせて設定してください
 
       // --- タグ編集モーダル用要素 ---
       let tagEditorModal = null;
@@ -167,9 +168,10 @@
             openTagEditor(post);
           });
 
-          // 削除ボタンを作成
+          // 削除ボタンを作成（管理者のみ）
+          let deleteBtn = null;
           if (isAdmin) {
-            const deleteBtn = document.createElement("button");
+            deleteBtn = document.createElement("button");
             deleteBtn.className = "delete-btn";
             deleteBtn.textContent = "🗑";
             deleteBtn.addEventListener("click", async (e) => {
@@ -195,16 +197,15 @@
                 }
               }
             });
-
-            card.appendChild(deleteBtn);
           }
+
+          // cardに要素を追加
+          card.appendChild(img);
+          card.appendChild(menuBtn);
+          if (deleteBtn) card.appendChild(deleteBtn);
 
           gallery.appendChild(card);
         });
-        card.appendChild(img);
-        card.appendChild(menuBtn);
-        card.appendChild(deleteBtn);
-        gallery.appendChild(card);
       }
 
       // モーダル開く関数
@@ -218,7 +219,6 @@
 
       // カルーセル描画
       function renderCarousel() {
-        // 画像を並べた横長のラッパーを作る
         const track = document.createElement("div");
         track.className = "carousel-track";
 
@@ -228,14 +228,13 @@
           track.appendChild(img);
         });
 
-        // トラックを表示位置に合わせてスライド
         track.style.transform = `translateX(-${currentSlide * 100}%)`;
 
-        // 既存のcarousel要素を置き換え
         carousel.innerHTML = "";
         carousel.appendChild(track);
       }
-      // ナビボタンの状態更新（1枚なら非表示）
+
+      // ナビボタンの状態更新
       function updateNavButtons() {
         if (currentImages.length <= 1) {
           prevBtn.style.display = "none";
@@ -404,6 +403,7 @@
             if (tagEditorModal.classList.contains("active")) closeTagEditor();
           }
         });
+
         const toggleBtn = document.getElementById("toggleTagsBtn");
         const tagsContainer = document.getElementById("tags-container");
 
