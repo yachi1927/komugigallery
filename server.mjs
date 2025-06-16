@@ -174,26 +174,21 @@ app.post("/upload", upload.array("images", 10), async (req, res) => {
 });
 
 // 画像削除API（MongoDB imagesコレクション）
-app.delete("/delete/:id", requireAdmin, async (req, res) => {
+app.delete("/posts/:id", requireAdmin, async (req, res) => {
   try {
-    const db = await connectDB();
-    const doc = await db
-      .collection("images")
-      .findOne({ _id: new ObjectId(req.params.id) });
-    if (!doc) return res.status(404).send("画像が見つかりません");
+    const post = await Post.findById(req.params.id);
+    if (!post) return res.status(404).send("投稿が見つかりません");
 
+    // Cloudinary画像削除（imagePublicIds が Cloudinary ID の配列）
     await Promise.all(
-      doc.imageUrls.map((url) =>
-        cloudinary.v2.uploader.destroy(extractPublicId(url))
-      )
+      post.imagePublicIds.map((id) => cloudinary.v2.uploader.destroy(id))
     );
-    await db
-      .collection("images")
-      .deleteOne({ _id: new ObjectId(req.params.id) });
 
-    res.json({ success: true });
+    await Post.findByIdAndDelete(req.params.id);
+
+    res.json({ success: true, message: "投稿を削除しました" });
   } catch (err) {
-    console.error("削除失敗:", err);
+    console.error("削除エラー:", err);
     res.status(500).send("削除に失敗しました");
   }
 });
