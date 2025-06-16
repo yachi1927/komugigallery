@@ -61,6 +61,8 @@
       let currentSlide = 0;
       let currentImages = [];
 
+      localStorage.setItem("token", token);
+
       // --- タグ編集モーダル用要素 ---
       let tagEditorModal = null;
       let tagEditorInput = null;
@@ -166,44 +168,44 @@
           });
 
           // 削除ボタンを作成
-if (isAdmin) {
-    const deleteBtn = document.createElement("button");
-    deleteBtn.className = "delete-btn";
-    deleteBtn.textContent = "🗑";
-    deleteBtn.addEventListener("click", async (e) => {
-      e.stopPropagation();
-      if (confirm("この投稿を削除しますか？")) {
-        try {
-          const res = await fetch(`/posts/${post.id}`, {
-            method: "DELETE",
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem("token")}`,
-            },
-          });
+          if (isAdmin) {
+            const deleteBtn = document.createElement("button");
+            deleteBtn.className = "delete-btn";
+            deleteBtn.textContent = "🗑";
+            deleteBtn.addEventListener("click", async (e) => {
+              e.stopPropagation();
+              if (confirm("この投稿を削除しますか？")) {
+                try {
+                  const res = await fetch(`/posts/${post.id}`, {
+                    method: "DELETE",
+                    headers: {
+                      Authorization: `Bearer ${localStorage.getItem("token")}`,
+                    },
+                  });
 
-          if (!res.ok) {
-            const text = await res.text();
-            throw new Error(text);
+                  if (!res.ok) {
+                    const text = await res.text();
+                    throw new Error(text);
+                  }
+
+                  alert("削除しました");
+                  loadGallery(currentPage);
+                } catch (err) {
+                  alert(err.message);
+                }
+              }
+            });
+
+            card.appendChild(deleteBtn);
           }
 
-          alert("削除しました");
-          loadGallery(currentPage);
-        } catch (err) {
-          alert(err.message);
-        }
-      }
-    });
-
-    card.appendChild(deleteBtn);
-  }
-
-  gallery.appendChild(card);
-});
-          card.appendChild(img);
-          card.appendChild(menuBtn);
-          card.appendChild(deleteBtn);
           gallery.appendChild(card);
-        }
+        });
+        card.appendChild(img);
+        card.appendChild(menuBtn);
+        card.appendChild(deleteBtn);
+        gallery.appendChild(card);
+      }
 
       // モーダル開く関数
       function openModal(images) {

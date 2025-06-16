@@ -61,8 +61,6 @@ const upload = multer({ storage });
 // MongoDB shellまたはMongooseで
 db.users.updateOne({ username: "admin" }, { $set: { isAdmin: true } });
 
-localStorage.setItem("token", token);
-
 function getUserFromToken() {
   const token = localStorage.getItem("token");
   if (!token) return null;
@@ -92,8 +90,6 @@ const Post = mongoose.model(
 
 app.use("/auth", authRoutes);
 app.use("/posts", postRoutes);
-
-app.listen(3000, () => console.log("Server running on port 3000"));
 
 const jwt = require("jsonwebtoken");
 const SECRET_KEY = process.env.JWT_SECRET || "your-secret";
@@ -232,10 +228,6 @@ app.post("/delete-post", async (req, res) => {
     console.error("削除エラー:", err);
     res.status(500).send("サーバーエラーで削除できませんでした");
   }
-});
-
-app.listen(3000, () => {
-  console.log("Server running on http://localhost:3000");
 });
 
 // 修正済み ギャラリーデータ取得（タグ絞り込み対応）
