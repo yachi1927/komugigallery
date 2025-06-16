@@ -42,6 +42,13 @@ async function connectDB() {
   return dbInstance;
 }
 
+await mongoose.connect(process.env.MONGODB_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+});
+console.log("MongoDB connected");
+
+
 // Multer設定
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
