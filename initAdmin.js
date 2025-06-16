@@ -6,11 +6,6 @@ import bcrypt from "bcrypt";
 import User from "./models/User.js";
 
 async function createAdminUser() {
-  console.log("MONGODB_URI:", process.env.MONGODB_URI);
-  if (!process.env.MONGODB_URI) {
-    throw new Error("MONGODB_URI is not defined");
-  }
-
   await mongoose.connect(process.env.MONGODB_URI);
 
   const existingAdmin = await User.findOne({ username: "admin" });
@@ -19,7 +14,7 @@ async function createAdminUser() {
     process.exit(0);
   }
 
-  const hashedPassword = await bcrypt.hash("admin1234", 10);
+  const hashedPassword = await bcrypt.hash("admin123", 10);
   const adminUser = new User({
     username: "admin",
     password: hashedPassword,
