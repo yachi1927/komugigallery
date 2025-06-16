@@ -5,7 +5,7 @@ import User from "./models/User.js"; // UserモデルをESMでimport
 async function createAdminUser() {
   await mongoose.connect(process.env.MONGODB_URI);
 
-  const existingAdmin = await User.findOne({ username: "aruwo" });
+  const existingAdmin = await User.findOne({ username: "admin" });
   if (existingAdmin) {
     console.log("管理者ユーザーはすでに存在します。");
     process.exit(0);
