@@ -28,6 +28,7 @@ const PORT = process.env.PORT || 3000;
 app.use("/auth", authRoutes);
 app.use("/posts", postRoutes);
 
+app.use(express.static("public"));
 
 async function main() {
   // MongoClientとDBインスタンス
