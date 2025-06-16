@@ -49,376 +49,377 @@
     </div>
 
     <script>
-            let selectedTag = null;
-            let currentPage = 1;
-            let totalPages = 1;
+      let selectedTag = null;
+      let currentPage = 1;
+      let totalPages = 1;
 
-            let modal = null;
-            let carousel = null;
-            let modalCloseBtn = null;
-            let prevBtn = null;
-            let nextBtn = null;
-            let currentSlide = 0;
-            let currentImages = [];
+      let modal = null;
+      let carousel = null;
+      let modalCloseBtn = null;
+      let prevBtn = null;
+      let nextBtn = null;
+      let currentSlide = 0;
+      let currentImages = [];
 
-            // --- タグ編集モーダル用要素 ---
-            let tagEditorModal = null;
-            let tagEditorInput = null;
-            let tagEditorSaveBtn = null;
-            let tagEditorCancelBtn = null;
-            let editingPost = null; // 現在編集中のpost
+      // --- タグ編集モーダル用要素 ---
+      let tagEditorModal = null;
+      let tagEditorInput = null;
+      let tagEditorSaveBtn = null;
+      let tagEditorCancelBtn = null;
+      let editingPost = null; // 現在編集中のpost
 
-            // URLからtagパラメータを取得
-            function getTagFromURL() {
-              const params = new URLSearchParams(window.location.search);
-              return params.get("tag");
-            }
+      // URLからtagパラメータを取得
+      function getTagFromURL() {
+        const params = new URLSearchParams(window.location.search);
+        return params.get("tag");
+      }
 
-            // URLからpageパラメータを取得
-            function getPageFromURL() {
-              const params = new URLSearchParams(window.location.search);
-              const p = parseInt(params.get("page"), 10);
-              return isNaN(p) || p < 1 ? 1 : p;
-            }
+      // URLからpageパラメータを取得
+      function getPageFromURL() {
+        const params = new URLSearchParams(window.location.search);
+        const p = parseInt(params.get("page"), 10);
+        return isNaN(p) || p < 1 ? 1 : p;
+      }
 
-            // URLのqueryパラメータを書き換え（履歴に追加）
-            function updateURL() {
-              const params = new URLSearchParams();
-              if (selectedTag) params.set("tag", selectedTag);
-              if (currentPage > 1) params.set("page", currentPage);
-              const newUrl =
-                window.location.pathname +
-                (params.toString() ? `?${params.toString()}` : "");
-              history.pushState(null, "", newUrl);
-            }
+      // URLのqueryパラメータを書き換え（履歴に追加）
+      function updateURL() {
+        const params = new URLSearchParams();
+        if (selectedTag) params.set("tag", selectedTag);
+        if (currentPage > 1) params.set("page", currentPage);
+        const newUrl =
+          window.location.pathname +
+          (params.toString() ? `?${params.toString()}` : "");
+        history.pushState(null, "", newUrl);
+      }
 
-            // タグ取得してボタン表示
-            async function loadTags() {
-              try {
-                const res = await fetch("/tags");
-                if (!res.ok) throw new Error("タグの取得に失敗しました");
-                const tags = await res.json();
+      // タグ取得してボタン表示
+      async function loadTags() {
+        try {
+          const res = await fetch("/tags");
+          if (!res.ok) throw new Error("タグの取得に失敗しました");
+          const tags = await res.json();
 
-                const container = document.getElementById("tags-container");
-                container.innerHTML = "";
+          const container = document.getElementById("tags-container");
+          container.innerHTML = "";
 
-                tags.forEach((tag) => {
-                  const btn = document.createElement("button");
-                  btn.className = "tag-btn";
-                  btn.textContent = tag;
-                  btn.addEventListener("click", () => {
-                    selectedTag = selectedTag === tag ? null : tag;
-                    currentPage = 1;
-                    updateTagButtons();
-                    updateURL();
-                    loadGallery(currentPage);
-                  });
-                  container.appendChild(btn);
-                });
-
-                updateTagButtons();
-              } catch (e) {
-                alert(e.message);
-              }
-            }
-
-            // 選択タグのボタン状態を更新
-            function updateTagButtons() {
-              const buttons = document.querySelectorAll(".tag-btn");
-              buttons.forEach((btn) => {
-                if (btn.textContent === selectedTag) {
-                  btn.classList.add("selected");
-                } else {
-                  btn.classList.remove("selected");
-                }
-              });
-            }
-
-            // 画像をカード形式で表示、クリックでモーダルを開く
-            function displayImages(posts) {
-              const gallery = document.getElementById("gallery");
-              gallery.innerHTML = "";
-
-              if (posts.length === 0) {
-                gallery.textContent = "該当する画像がありません";
-                return;
-              }
-
-              posts.forEach((post) => {
-                const card = document.createElement("div");
-                card.className = "image-card";
-
-                const img = document.createElement("img");
-                img.src = post.imageUrls[0];
-                img.alt = post.tags.join(", ");
-
-                img.addEventListener("click", () => {
-                  openModal(post.imageUrls);
-                });
-
-                // 3点リーダーボタン（タグ編集用）
-                const menuBtn = document.createElement("button");
-                menuBtn.className = "menu-btn";
-                menuBtn.textContent = "︙";
-                menuBtn.addEventListener("click", (e) => {
-                  e.stopPropagation();
-                  openTagEditor(post);
-                });
-
-                // 削除ボタンを作成
-          if (isAdmin) {
-          const deleteBtn = document.createElement("button");
-          deleteBtn.className = "delete-btn";
-          deleteBtn.textContent = "🗑";
-          deleteBtn.addEventListener("click", async (e) => {
-            e.stopPropagation();
-            if (confirm("この投稿を削除しますか？")) {
-              try {
-                const res = await fetch(`/posts/${post.id}`, {
-                  method: "DELETE",
-                  headers: {
-                    Authorization: `Bearer ${localStorage.getItem("token")}`,
-                  },
-                });
-
-                if (!res.ok) {
-                  const text = await res.text();
-                  throw new Error(text);
-                }
-
-                alert("削除しました");
-                loadGallery(currentPage);
-              } catch (err) {
-                alert(err.message);
-              }
-            }
+          tags.forEach((tag) => {
+            const btn = document.createElement("button");
+            btn.className = "tag-btn";
+            btn.textContent = tag;
+            btn.addEventListener("click", () => {
+              selectedTag = selectedTag === tag ? null : tag;
+              currentPage = 1;
+              updateTagButtons();
+              updateURL();
+              loadGallery(currentPage);
+            });
+            container.appendChild(btn);
           });
 
-          card.appendChild(deleteBtn);
+          updateTagButtons();
+        } catch (e) {
+          alert(e.message);
+        }
+      }
+
+      // 選択タグのボタン状態を更新
+      function updateTagButtons() {
+        const buttons = document.querySelectorAll(".tag-btn");
+        buttons.forEach((btn) => {
+          if (btn.textContent === selectedTag) {
+            btn.classList.add("selected");
+          } else {
+            btn.classList.remove("selected");
+          }
+        });
+      }
+
+      // 画像をカード形式で表示、クリックでモーダルを開く
+      function displayImages(posts) {
+        const gallery = document.getElementById("gallery");
+        gallery.innerHTML = "";
+
+        if (posts.length === 0) {
+          gallery.textContent = "該当する画像がありません";
+          return;
         }
 
-        gallery.appendChild(card);
-      });
-                card.appendChild(img);
-                card.appendChild(menuBtn);
-                card.appendChild(deleteBtn);
-                gallery.appendChild(card);
+        posts.forEach((post) => {
+          const card = document.createElement("div");
+          card.className = "image-card";
 
-            // モーダル開く関数
-            function openModal(images) {
-              currentImages = images;
-              currentSlide = 0;
-              renderCarousel();
-              modal.classList.add("active");
-              updateNavButtons();
-            }
+          const img = document.createElement("img");
+          img.src = post.imageUrls[0];
+          img.alt = post.tags.join(", ");
 
-            // カルーセル描画
-            function renderCarousel() {
-              // 画像を並べた横長のラッパーを作る
-              const track = document.createElement("div");
-              track.className = "carousel-track";
+          img.addEventListener("click", () => {
+            openModal(post.imageUrls);
+          });
 
-              currentImages.forEach((src) => {
-                const img = document.createElement("img");
-                img.src = src;
-                track.appendChild(img);
-              });
+          // 3点リーダーボタン（タグ編集用）
+          const menuBtn = document.createElement("button");
+          menuBtn.className = "menu-btn";
+          menuBtn.textContent = "︙";
+          menuBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            openTagEditor(post);
+          });
 
-              // トラックを表示位置に合わせてスライド
-              track.style.transform = `translateX(-${currentSlide * 100}%)`;
+          // 削除ボタンを作成
+if (isAdmin) {
+    const deleteBtn = document.createElement("button");
+    deleteBtn.className = "delete-btn";
+    deleteBtn.textContent = "🗑";
+    deleteBtn.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      if (confirm("この投稿を削除しますか？")) {
+        try {
+          const res = await fetch(`/posts/${post.id}`, {
+            method: "DELETE",
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          });
 
-              // 既存のcarousel要素を置き換え
-              carousel.innerHTML = "";
-              carousel.appendChild(track);
-            }
-            // ナビボタンの状態更新（1枚なら非表示）
-            function updateNavButtons() {
-              if (currentImages.length <= 1) {
-                prevBtn.style.display = "none";
-                nextBtn.style.display = "none";
-              } else {
-                prevBtn.style.display = "inline-block";
-                nextBtn.style.display = "inline-block";
-              }
-            }
+          if (!res.ok) {
+            const text = await res.text();
+            throw new Error(text);
+          }
 
-            // ナビ操作
-            function showPrev() {
-              if (currentSlide > 0) {
-                currentSlide--;
-                renderCarousel();
-              }
-            }
-            function showNext() {
-              if (currentSlide < currentImages.length - 1) {
-                currentSlide++;
-                renderCarousel();
-              }
-            }
+          alert("削除しました");
+          loadGallery(currentPage);
+        } catch (err) {
+          alert(err.message);
+        }
+      }
+    });
 
-            // モーダル閉じる
-            function closeModal() {
-              modal.classList.remove("active");
-            }
+    card.appendChild(deleteBtn);
+  }
 
-            // ページネーションの描画
-            function renderPagination() {
-              const container = document.getElementById("pagination");
-              container.innerHTML = "";
+  gallery.appendChild(card);
+});
+          card.appendChild(img);
+          card.appendChild(menuBtn);
+          card.appendChild(deleteBtn);
+          gallery.appendChild(card);
+        }
 
-              if (totalPages <= 1) return;
+      // モーダル開く関数
+      function openModal(images) {
+        currentImages = images;
+        currentSlide = 0;
+        renderCarousel();
+        modal.classList.add("active");
+        updateNavButtons();
+      }
 
-              const prevBtn = document.createElement("button");
-              prevBtn.textContent = "Back";
-              prevBtn.disabled = currentPage === 1;
-              prevBtn.onclick = () => {
-                if (currentPage > 1) {
-                  currentPage--;
-                  updateURL();
-                  loadGallery(currentPage);
-                }
-              };
-              container.appendChild(prevBtn);
+      // カルーセル描画
+      function renderCarousel() {
+        // 画像を並べた横長のラッパーを作る
+        const track = document.createElement("div");
+        track.className = "carousel-track";
 
-              const nextBtn = document.createElement("button");
-              nextBtn.textContent = "Next";
-              nextBtn.disabled = currentPage === totalPages;
-              nextBtn.onclick = () => {
-                if (currentPage < totalPages) {
-                  currentPage++;
-                  updateURL();
-                  loadGallery(currentPage);
-                }
-              };
-              container.appendChild(nextBtn);
-            }
+        currentImages.forEach((src) => {
+          const img = document.createElement("img");
+          img.src = src;
+          track.appendChild(img);
+        });
 
-            // ギャラリー読み込み（タグ1つだけ送る）
-            async function loadGallery(page = 1) {
-              try {
-                let url = `/gallery-data?page=${page}`;
-                if (selectedTag) {
-                  url += `&tag=${encodeURIComponent(selectedTag)}`;
-                }
-                const res = await fetch(url);
-                if (!res.ok) throw new Error("ギャラリーの取得に失敗しました");
-                const json = await res.json();
+        // トラックを表示位置に合わせてスライド
+        track.style.transform = `translateX(-${currentSlide * 100}%)`;
 
-                displayImages(json.posts);
-                currentPage = json.currentPage;
-                totalPages = json.totalPages;
-                renderPagination();
-              } catch (e) {
-                alert(e.message);
-              }
-            }
+        // 既存のcarousel要素を置き換え
+        carousel.innerHTML = "";
+        carousel.appendChild(track);
+      }
+      // ナビボタンの状態更新（1枚なら非表示）
+      function updateNavButtons() {
+        if (currentImages.length <= 1) {
+          prevBtn.style.display = "none";
+          nextBtn.style.display = "none";
+        } else {
+          prevBtn.style.display = "inline-block";
+          nextBtn.style.display = "inline-block";
+        }
+      }
 
-            // ------------- タグ編集モーダルの制御 ---------------
+      // ナビ操作
+      function showPrev() {
+        if (currentSlide > 0) {
+          currentSlide--;
+          renderCarousel();
+        }
+      }
+      function showNext() {
+        if (currentSlide < currentImages.length - 1) {
+          currentSlide++;
+          renderCarousel();
+        }
+      }
 
-            // モーダルを開く（postオブジェクトを渡す）
-            function openTagEditor(post) {
-              editingPost = post;
-              tagEditorInput.value = post.tags.join(", ");
-              tagEditorModal.classList.add("active");
-            }
+      // モーダル閉じる
+      function closeModal() {
+        modal.classList.remove("active");
+      }
 
-            // モーダルを閉じる
-            function closeTagEditor() {
-              tagEditorModal.classList.remove("active");
-              editingPost = null;
-            }
+      // ページネーションの描画
+      function renderPagination() {
+        const container = document.getElementById("pagination");
+        container.innerHTML = "";
 
-            // 保存ボタン（タグ更新APIを呼ぶ）
-            async function saveTags() {
-              if (!editingPost) return;
+        if (totalPages <= 1) return;
 
-              const newTags = tagEditorInput.value
-                .split(",")
-                .map((t) => t.trim())
-                .filter((t) => t.length > 0);
+        const prevBtn = document.createElement("button");
+        prevBtn.textContent = "Back";
+        prevBtn.disabled = currentPage === 1;
+        prevBtn.onclick = () => {
+          if (currentPage > 1) {
+            currentPage--;
+            updateURL();
+            loadGallery(currentPage);
+          }
+        };
+        container.appendChild(prevBtn);
 
-              try {
-                const res = await fetch("/update-tags", {
-                  method: "POST",
-                  headers: {
-                    "Content-Type": "application/json",
-                  },
-                  body: JSON.stringify({
-                    id: editingPost.id,
-                    tags: newTags.join(","),
-                  }),
-                });
+        const nextBtn = document.createElement("button");
+        nextBtn.textContent = "Next";
+        nextBtn.disabled = currentPage === totalPages;
+        nextBtn.onclick = () => {
+          if (currentPage < totalPages) {
+            currentPage++;
+            updateURL();
+            loadGallery(currentPage);
+          }
+        };
+        container.appendChild(nextBtn);
+      }
 
-                if (!res.ok) {
-                  const text = await res.text();
-                  throw new Error(text || "タグ更新に失敗しました");
-                }
+      // ギャラリー読み込み（タグ1つだけ送る）
+      async function loadGallery(page = 1) {
+        try {
+          let url = `/gallery-data?page=${page}`;
+          if (selectedTag) {
+            url += `&tag=${encodeURIComponent(selectedTag)}`;
+          }
+          const res = await fetch(url);
+          if (!res.ok) throw new Error("ギャラリーの取得に失敗しました");
+          const json = await res.json();
 
-                editingPost.tags = newTags; // ローカル更新
-                alert("タグを更新しました: " + newTags.join(", "));
-                closeTagEditor();
-                loadGallery(currentPage); // UIを再読み込み
-              } catch (error) {
-                alert(error.message);
-              }
-            }
+          displayImages(json.posts);
+          currentPage = json.currentPage;
+          totalPages = json.totalPages;
+          renderPagination();
+        } catch (e) {
+          alert(e.message);
+        }
+      }
 
-            window.onload = async () => {
-              selectedTag = getTagFromURL();
-              currentPage = getPageFromURL();
-              await loadTags();
-              updateTagButtons();
-              await loadGallery(currentPage);
+      // ------------- タグ編集モーダルの制御 ---------------
 
-              modal = document.getElementById("modal");
-              carousel = document.getElementById("carousel");
-              modalCloseBtn = document.getElementById("modalClose");
-              prevBtn = document.getElementById("prevBtn");
-              nextBtn = document.getElementById("nextBtn");
+      // モーダルを開く（postオブジェクトを渡す）
+      function openTagEditor(post) {
+        editingPost = post;
+        tagEditorInput.value = post.tags.join(", ");
+        tagEditorModal.classList.add("active");
+      }
 
-              // タグ編集モーダル要素取得
-              tagEditorModal = document.getElementById("tagEditorModal");
-              tagEditorInput = document.getElementById("tagEditorInput");
-              tagEditorSaveBtn = document.getElementById("tagEditorSaveBtn");
-              tagEditorCancelBtn = document.getElementById("tagEditorCancelBtn");
+      // モーダルを閉じる
+      function closeTagEditor() {
+        tagEditorModal.classList.remove("active");
+        editingPost = null;
+      }
 
-              modalCloseBtn.addEventListener("click", closeModal);
-              prevBtn.addEventListener("click", showPrev);
-              nextBtn.addEventListener("click", showNext);
+      // 保存ボタン（タグ更新APIを呼ぶ）
+      async function saveTags() {
+        if (!editingPost) return;
 
-              tagEditorSaveBtn.addEventListener("click", saveTags);
-              tagEditorCancelBtn.addEventListener("click", closeTagEditor);
+        const newTags = tagEditorInput.value
+          .split(",")
+          .map((t) => t.trim())
+          .filter((t) => t.length > 0);
 
-              // モーダル外クリックでタグ編集モーダル閉じる
-              tagEditorModal.addEventListener("click", (e) => {
-                if (e.target === tagEditorModal) closeTagEditor();
-              });
+        try {
+          const res = await fetch("/update-tags", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              id: editingPost.id,
+              tags: newTags.join(","),
+            }),
+          });
 
-              window.addEventListener("keydown", (e) => {
-                if (e.key === "Escape") {
-                  if (modal.classList.contains("active")) closeModal();
-                  if (tagEditorModal.classList.contains("active")) closeTagEditor();
-                }
-              });
-              const toggleBtn = document.getElementById("toggleTagsBtn");
-              const tagsContainer = document.getElementById("tags-container");
+          if (!res.ok) {
+            const text = await res.text();
+            throw new Error(text || "タグ更新に失敗しました");
+          }
 
-              toggleBtn.addEventListener("click", () => {
-                tagsContainer.classList.toggle("hidden");
-                toggleBtn.textContent = tagsContainer.classList.contains("hidden")
-                  ? "Open"
-                  : "Close";
-              });
-            };
+          editingPost.tags = newTags; // ローカル更新
+          alert("タグを更新しました: " + newTags.join(", "));
+          closeTagEditor();
+          loadGallery(currentPage); // UIを再読み込み
+        } catch (error) {
+          alert(error.message);
+        }
+      }
 
-            // ブラウザの戻る・進むに対応
-            window.onpopstate = () => {
-              selectedTag = getTagFromURL();
-              currentPage = getPageFromURL();
-              updateTagButtons();
-              loadGallery(currentPage);
-            };
+      window.onload = async () => {
+        selectedTag = getTagFromURL();
+        currentPage = getPageFromURL();
+        await loadTags();
+        updateTagButtons();
+        await loadGallery(currentPage);
+
+        modal = document.getElementById("modal");
+        carousel = document.getElementById("carousel");
+        modalCloseBtn = document.getElementById("modalClose");
+        prevBtn = document.getElementById("prevBtn");
+        nextBtn = document.getElementById("nextBtn");
+
+        // タグ編集モーダル要素取得
+        tagEditorModal = document.getElementById("tagEditorModal");
+        tagEditorInput = document.getElementById("tagEditorInput");
+        tagEditorSaveBtn = document.getElementById("tagEditorSaveBtn");
+        tagEditorCancelBtn = document.getElementById("tagEditorCancelBtn");
+
+        modalCloseBtn.addEventListener("click", closeModal);
+        prevBtn.addEventListener("click", showPrev);
+        nextBtn.addEventListener("click", showNext);
+
+        tagEditorSaveBtn.addEventListener("click", saveTags);
+        tagEditorCancelBtn.addEventListener("click", closeTagEditor);
+
+        // モーダル外クリックでタグ編集モーダル閉じる
+        tagEditorModal.addEventListener("click", (e) => {
+          if (e.target === tagEditorModal) closeTagEditor();
+        });
+
+        window.addEventListener("keydown", (e) => {
+          if (e.key === "Escape") {
+            if (modal.classList.contains("active")) closeModal();
+            if (tagEditorModal.classList.contains("active")) closeTagEditor();
+          }
+        });
+        const toggleBtn = document.getElementById("toggleTagsBtn");
+        const tagsContainer = document.getElementById("tags-container");
+
+        toggleBtn.addEventListener("click", () => {
+          tagsContainer.classList.toggle("hidden");
+          toggleBtn.textContent = tagsContainer.classList.contains("hidden")
+            ? "Open"
+            : "Close";
+        });
+      };
+
+      // ブラウザの戻る・進むに対応
+      window.onpopstate = () => {
+        selectedTag = getTagFromURL();
+        currentPage = getPageFromURL();
+        updateTagButtons();
+        loadGallery(currentPage);
+      };
     </script>
   </body>
 </html>
