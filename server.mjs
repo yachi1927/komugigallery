@@ -1,29 +1,38 @@
 // server.js (ESモジュール形式)
 
-import dotenv from "dotenv";
-if (process.env.NODE_ENV !== "production") {
-  dotenv.config();
-}
+app.use("/auth", authRoutes);
+app.use("/posts", postRoutes);
 
+import authRoutes from "./routes/auth.js";
+import postRoutes from "./routes/posts.js";
 import express from "express";
 import multer from "multer";
-import { v2 as cloudinary } from "cloudinary";
-import path from "path";
+import dotenv from "dotenv";
 import cors from "cors";
-import { MongoClient, ObjectId } from "mongodb";
-import jwt from "jsonwebtoken";
-import { Readable } from "stream";
-
-// __dirname の代替（ESモジュールでは使えないため）
+import path from "path";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
+import { MongoClient, ObjectId } from "mongodb";
+import mongoose from "mongoose";
+import jwt from "jsonwebtoken";
+import { Readable } from "stream";
+import { v2 as cloudinary } from "cloudinary";
+
+// ESモジュール用 __dirname
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
+// 環境変数
+dotenv.config();
+
+// Express初期化
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(express.static(path.join(__dirname, "public")));
 
 // Cloudinary設定
 cloudinary.config({
@@ -32,98 +41,20 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-// MongoDB設定
-const uri = process.env.MONGODB_URI;
-const client = new MongoClient(uri);
-
+// MongoDBクライアント（MongoClientとmongoose両方使用）
+const client = new MongoClient(process.env.MONGODB_URI);
 let dbInstance = null;
-
 async function connectDB() {
   if (!dbInstance) {
-    try {
-      await client.connect();
-      console.log("MongoDB connected");
-      dbInstance = client.db(process.env.MONGODB_DB_NAME);
-    } catch (err) {
-      console.error("MongoDB connection error:", err);
-      throw err;
-    }
+    await client.connect();
+    dbInstance = client.db(process.env.MONGODB_DB_NAME);
+    console.log("MongoDB connected");
   }
   return dbInstance;
 }
 
-// 初期化などの非同期処理はトップレベルawaitでそのまま書ける（Node.js 14+）
-await (async () => {
-  const db = await connectDB();
-  await db.collection("users").updateOne(
-    { username: "admin" },
-    { $set: { isAdmin: true } },
-    { upsert: true }
-  );
-})();
-
-app.use(cors());
-app.use(express.static(path.join(__dirname, "public")));
-app.use(express.urlencoded({ extended: true }));
-
-// ここから続きます...
-
-const storage = multer.memoryStorage();
-const upload = multer({ storage });
-
-// MongoDB shellまたはMongooseで
-
-async function initAdminUser() {
-  const db = await connectDB();
-  await db.collection("users").updateOne(
-    { username: "admin" },
-    { $set: { isAdmin: true } },
-    { upsert: true } // adminが無ければ作る
-  );
-}
-
-(async () => {
-  await initAdminUser();
-})();
-
-app.use((req, res, next) => {
-  req.currentUser = getUserFromToken(req);
-  next();
-});
-const isAdmin = currentUser?.isAdmin;
-
-const jwt = require("jsonwebtoken");
-const SECRET_KEY = process.env.JWT_SECRET || "your-secret";
-
-function getUserFromToken(req) {
-  const authHeader = req.headers.authorization;
-  if (!authHeader) return null;
-
-  const token = authHeader.split(" ")[1]; // "Bearer <token>" 形式の場合
-  if (!token) return null;
-
-  try {
-    const payload = jwt.verify(token, SECRET_KEY);
-    return payload; // { id, username, isAdmin }
-  } catch {
-    return null;
-  }
-}
-
-app.get("/some-protected-route", (req, res) => {
-  if (!req.currentUser) {
-    return res.status(401).send("認証が必要です");
-  }
-
-  if (req.currentUser.isAdmin) {
-    // 管理者向け処理
-  }
-
-  res.send("アクセス成功");
-});
-
-// MongoDB接続
-mongoose.connect("mongodb://localhost:27017/galleryApp");
+// Mongoose接続とモデル
+await mongoose.connect(process.env.MONGODB_URI);
 const Post = mongoose.model(
   "Post",
   new mongoose.Schema({
@@ -134,43 +65,35 @@ const Post = mongoose.model(
   })
 );
 
-app.use("/auth", authRoutes);
-app.use("/posts", postRoutes);
+// Multer設定
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
 
-// 仮のユーザーデータ
-const adminUsers = [
-  { username: "admin", password: "password123", isAdmin: true },
-];
-
-app.post("/login", (req, res) => {
-  const { username, password } = req.body;
-  const user = adminUsers.find(
-    (u) => u.username === username && u.password === password
-  );
-
-  if (!user) {
-    return res.status(401).send("ユーザー名またはパスワードが違います");
+// JWT関連
+const SECRET_KEY = process.env.JWT_SECRET || "your-secret";
+function getUserFromToken(req) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader) return null;
+  const token = authHeader.split(" ")[1];
+  if (!token) return null;
+  try {
+    return jwt.verify(token, SECRET_KEY);
+  } catch {
+    return null;
   }
+}
 
-  const token = jwt.sign(
-    { id: user.username, isAdmin: user.isAdmin },
-    SECRET_KEY,
-    { expiresIn: "1d" }
-  );
-
-  res.json({ token });
+app.use((req, res, next) => {
+  req.currentUser = getUserFromToken(req);
+  next();
 });
 
-// 画像アップロード
-const { Readable } = require("stream");
-
-// Cloudinaryアップロード関数
+// Cloudinaryアップロード
 function uploadToCloudinary(file) {
   return new Promise((resolve, reject) => {
     const bufferStream = new Readable();
     bufferStream.push(file.buffer);
     bufferStream.push(null);
-
     const stream = cloudinary.uploader.upload_stream(
       { folder: "komugigallery" },
       (error, result) => {
@@ -178,125 +101,136 @@ function uploadToCloudinary(file) {
         else resolve(result.secure_url);
       }
     );
-
     bufferStream.pipe(stream);
   });
 }
 
-// 画像アップロード処理
+// Cloudinary public ID抽出
+function extractPublicId(url) {
+  const parts = url.split("/");
+  const publicIdWithExt = parts.slice(-2).join("/");
+  return publicIdWithExt.replace(/\.[^/.]+$/, "");
+}
+
+// 管理者初期化
+async function initAdminUser() {
+  const db = await connectDB();
+  await db
+    .collection("users")
+    .updateOne(
+      { username: "admin" },
+      { $set: { isAdmin: true } },
+      { upsert: true }
+    );
+}
+await initAdminUser();
+
+// 仮ユーザーログイン（本番はDB管理推奨）
+const adminUsers = [
+  { username: "admin", password: "password123", isAdmin: true },
+];
+app.post("/login", (req, res) => {
+  const { username, password } = req.body;
+  const user = adminUsers.find(
+    (u) => u.username === username && u.password === password
+  );
+  if (!user)
+    return res.status(401).send("ユーザー名またはパスワードが違います");
+
+  const token = jwt.sign(
+    { id: user.username, isAdmin: user.isAdmin },
+    SECRET_KEY,
+    {
+      expiresIn: "1d",
+    }
+  );
+  res.json({ token });
+});
+
+// アップロード
 app.post("/upload", upload.array("images", 10), async (req, res) => {
   try {
     const db = await connectDB();
-
-    const tags = req.body.tags
-      ? req.body.tags
-          .split(",")
-          .map((t) => t.trim())
-          .filter(Boolean)
-      : [];
-
-    if (!req.files || req.files.length === 0) {
+    const tags =
+      req.body.tags
+        ?.split(",")
+        .map((t) => t.trim())
+        .filter(Boolean) || [];
+    if (!req.files?.length)
       return res.status(400).send("画像が選択されていません");
-    }
 
     const imageUrls = await Promise.all(
       req.files.map((file) => uploadToCloudinary(file))
     );
-
-    const collection = db.collection("images");
-    await collection.insertOne({
-      imageUrls,
-      tags,
-      createdAt: new Date(),
-    });
+    await db
+      .collection("images")
+      .insertOne({ imageUrls, tags, createdAt: new Date() });
 
     res.redirect("/gallery.html");
-  } catch (error) {
-    console.error("アップロードエラー:", error);
+  } catch (err) {
+    console.error("アップロードエラー:", err);
     res.status(500).send("アップロードに失敗しました");
   }
 });
 
-// Cloudinary削除関数
-function extractPublicId(url) {
-  const parts = url.split("/");
-  const publicIdWithExt = parts.slice(-2).join("/"); // komugigallery/abc.jpg
-  return publicIdWithExt.replace(/\.[^/.]+$/, ""); // 拡張子除去
-}
-
-// 削除処理
+// 削除
 app.delete("/delete/:id", async (req, res) => {
   try {
     const db = await connectDB();
-    const collection = db.collection("images");
-    const { id } = req.params;
-
-    const doc = await collection.findOne({ _id: new ObjectId(id) });
+    const doc = await db
+      .collection("images")
+      .findOne({ _id: new ObjectId(req.params.id) });
     if (!doc) return res.status(404).send("画像が見つかりません");
 
-    const deletePromises = doc.imageUrls.map((url) => {
-      const publicId = extractPublicId(url);
-      return cloudinary.uploader.destroy(publicId);
-    });
-
-    await Promise.all(deletePromises);
-    await collection.deleteOne({ _id: new ObjectId(id) });
+    await Promise.all(
+      doc.imageUrls.map((url) =>
+        cloudinary.uploader.destroy(extractPublicId(url))
+      )
+    );
+    await db
+      .collection("images")
+      .deleteOne({ _id: new ObjectId(req.params.id) });
 
     res.json({ success: true });
-  } catch (error) {
-    console.error("削除失敗:", error);
+  } catch (err) {
+    console.error("削除失敗:", err);
     res.status(500).send("削除に失敗しました");
   }
 });
 
-// 削除API
+// Mongooseの投稿削除
 app.post("/delete-post", async (req, res) => {
   const { id, password } = req.body;
-
-  if (password !== process.env.ADMIN_PASSWORD) {
+  if (password !== process.env.ADMIN_PASSWORD)
     return res.status(403).send("パスワードが違います");
-  }
 
   try {
     const post = await Post.findById(id);
-    if (!post) return res.status(404).send("対象の投稿が見つかりません");
+    if (!post) return res.status(404).send("投稿が見つかりません");
 
-    // Cloudinaryから画像削除
-    if (post.imagePublicIds && post.imagePublicIds.length > 0) {
-      await Promise.all(
-        post.imagePublicIds.map((publicId) =>
-          cloudinary.uploader.destroy(publicId)
-        )
-      );
-    }
-
-    // DBから削除
+    await Promise.all(
+      post.imagePublicIds.map((id) => cloudinary.uploader.destroy(id))
+    );
     await Post.findByIdAndDelete(id);
 
     res.send("削除完了しました");
   } catch (err) {
     console.error("削除エラー:", err);
-    res.status(500).send("サーバーエラーで削除できませんでした");
+    res.status(500).send("削除できませんでした");
   }
 });
 
-// 修正済み ギャラリーデータ取得（タグ絞り込み対応）
+// ギャラリーデータ取得
 app.get("/gallery-data", async (req, res) => {
   try {
     const db = await connectDB();
     const collection = db.collection("images");
-
     const page = parseInt(req.query.page) || 1;
     const limit = 10;
     const skip = (page - 1) * limit;
-
-    // タグ絞り込み条件
-    let filter = {};
-    if (req.query.tag) {
-      // 部分一致かつ大文字小文字無視でタグに一致するものを検索
-      filter.tags = { $elemMatch: { $regex: req.query.tag, $options: "i" } };
-    }
-
+    const filter = req.query.tag
+      ? { tags: { $elemMatch: { $regex: req.query.tag, $options: "i" } } }
+      : {};
     const totalCount = await collection.countDocuments(filter);
     const data = await collection
       .find(filter)
@@ -305,137 +239,106 @@ app.get("/gallery-data", async (req, res) => {
       .limit(limit)
       .toArray();
 
-    const formatted = data.map((doc) => ({
-      id: doc._id.toString(),
-      imageUrls: doc.imageUrls,
-      tags: doc.tags || [],
-      createdAt: doc.createdAt,
-    }));
-
     res.json({
-      posts: formatted,
+      posts: data.map((doc) => ({
+        id: doc._id.toString(),
+        imageUrls: doc.imageUrls,
+        tags: doc.tags || [],
+        createdAt: doc.createdAt,
+      })),
       currentPage: page,
       totalPages: Math.ceil(totalCount / limit),
     });
-  } catch (error) {
-    console.error(error);
+  } catch (err) {
+    console.error(err);
     res.status(500).send("データ取得失敗");
   }
 });
 
-async function loadGallery(page = 1) {
-  try {
-    const res = await fetch(`/gallery-data?page=${page}`);
-    if (!res.ok) throw new Error("ギャラリー取得失敗");
-    const json = await res.json();
-
-    displayImages(json.posts, "gallery");
-
-    // ページネーションUIがあれば更新や制御をここに書く
-    console.log(`ページ${json.currentPage} / ${json.totalPages}`);
-  } catch (error) {
-    console.error(error);
-    alert(error.message);
-  }
-}
-
-// 以下、元コードのまま
+// タグ一覧
 app.get("/tags", async (req, res) => {
   try {
     const db = await connectDB();
-    const collection = db.collection("images");
-    const allDocs = await collection
+    const docs = await db
+      .collection("images")
       .find({}, { projection: { tags: 1 } })
       .toArray();
-    const allTagsSet = new Set();
-    allDocs.forEach((doc) => doc.tags.forEach((tag) => allTagsSet.add(tag)));
-    res.json(Array.from(allTagsSet));
-  } catch (error) {
-    console.error(error);
+    const tagSet = new Set();
+    docs.forEach((doc) => doc.tags?.forEach((tag) => tagSet.add(tag)));
+    res.json([...tagSet]);
+  } catch (err) {
+    console.error(err);
     res.status(500).send("タグ取得失敗");
   }
 });
 
+// タグによる検索
 app.get("/search", async (req, res) => {
   try {
     const db = await connectDB();
     const keyword = (req.query.tag || "").trim();
+    if (!keyword) return res.status(400).send("キーワードが必要です");
 
-    if (!keyword) {
-      return res.status(400).send("検索キーワードが必要です");
-    }
-
-    const collection = db.collection("images");
-
-    const data = await collection
-      .find({
-        tags: { $elemMatch: { $regex: keyword, $options: "i" } },
-      })
+    const results = await db
+      .collection("images")
+      .find({ tags: { $elemMatch: { $regex: keyword, $options: "i" } } })
       .sort({ createdAt: -1 })
       .limit(10)
       .toArray();
 
-    const formatted = data.map((doc) => ({
-      id: doc._id.toString(),
-      imageUrls: doc.imageUrls,
-      tags: doc.tags || [],
-      createdAt: doc.createdAt,
-    }));
-
-    res.json(formatted);
-  } catch (error) {
-    console.error(error);
+    res.json(
+      results.map((doc) => ({
+        id: doc._id.toString(),
+        imageUrls: doc.imageUrls,
+        tags: doc.tags || [],
+        createdAt: doc.createdAt,
+      }))
+    );
+  } catch (err) {
+    console.error(err);
     res.status(500).send("検索に失敗しました");
   }
 });
 
+// タグ更新
 app.post("/update-tags", async (req, res) => {
   try {
     const db = await connectDB();
     const { id, tags } = req.body;
-    if (!id || !tags) {
-      return res.status(400).send("IDとタグが必要です");
-    }
+    if (!id || !tags) return res.status(400).send("IDとタグが必要です");
 
-    const collection = db.collection("images");
-    const newTags = tags
-      .split(",")
-      .map((t) => t.trim())
-      .filter(Boolean);
-
-    const result = await collection.updateOne(
+    const updated = await db.collection("images").updateOne(
       { _id: new ObjectId(id) },
-      { $set: { tags: newTags } }
+      {
+        $set: {
+          tags: tags
+            .split(",")
+            .map((t) => t.trim())
+            .filter(Boolean),
+        },
+      }
     );
 
-    if (result.matchedCount === 0)
+    if (updated.matchedCount === 0)
       return res.status(404).send("投稿が見つかりません");
-
     res.json({ success: true });
-  } catch (error) {
-    console.error(error);
+  } catch (err) {
+    console.error(err);
     res.status(500).send("タグ更新失敗");
   }
 });
 
+// タグカテゴリ分類
 app.get("/tag-categories", async (req, res) => {
   try {
     const db = await connectDB();
-    const collection = db.collection("images");
-    const allDocs = await collection
+    const docs = await db
+      .collection("images")
       .find({}, { projection: { tags: 1 } })
       .toArray();
+    const allTags = new Set();
+    docs.forEach((doc) => doc.tags?.forEach((tag) => allTags.add(tag)));
 
-    // 全タグを収集
-    const allTagsSet = new Set();
-    allDocs.forEach((doc) => {
-      if (Array.isArray(doc.tags)) {
-        doc.tags.forEach((tag) => allTagsSet.add(tag));
-      }
-    });
-    const tagsArray = Array.from(allTagsSet);
-
-    // タグ分類ルール
     const categoryRules = {
       CP: ["akiz", "hiar", "szak", "kmkt"],
       Character: [
@@ -454,64 +357,39 @@ app.get("/tag-categories", async (req, res) => {
       ],
     };
 
-    // カテゴリー化関数（Dateカテゴリ含む）
-    function categorizeTags(tags, rules) {
-      const categorized = {};
+    const categorized = {
+      CP: [],
+      Character: [],
+      Date: [...allTags].filter((tag) => /\d{4}\/\d{2}|\d{4}年/.test(tag)),
+      Other: [],
+    };
 
-      // 既存ルールのカテゴリ作成
-      for (const category in rules) {
-        categorized[category] = [];
+    for (const tag of allTags) {
+      let matched = false;
+      for (const [category, list] of Object.entries(categoryRules)) {
+        if (list.includes(tag)) {
+          categorized[category].push(tag);
+          matched = true;
+        }
       }
-
-      // Dateカテゴリを自動抽出
-      categorized["Date"] = tags.filter(
-        (tag) => /\d{4}\/\d{2}/.test(tag) || /\d{4}年/.test(tag)
-      );
-
-      // その他カテゴリ
-      categorized["Other"] = [];
-
-      // 分類処理
-      tags.forEach((tag) => {
-        let found = false;
-
-        // CP, Character に属しているかチェック
-        for (const category in rules) {
-          if (rules[category].includes(tag)) {
-            if (!categorized[category].includes(tag)) {
-              categorized[category].push(tag);
-            }
-            found = true;
-            break;
-          }
-        }
-
-        // Date にすでに入っていればスキップ
-        if (!found && categorized["Date"].includes(tag)) {
-          found = true;
-        }
-
-        // どこにも属さなければ Other
-        if (!found) {
-          categorized["Other"].push(tag);
-        }
-      });
-
-      return categorized;
+      if (!matched && !categorized["Date"].includes(tag)) {
+        categorized["Other"].push(tag);
+      }
     }
 
-    const categorizedTags = categorizeTags(tagsArray, categoryRules);
-    res.json(categorizedTags);
-  } catch (error) {
-    console.error(error);
+    res.json(categorized);
+  } catch (err) {
+    console.error(err);
     res.status(500).send("タグカテゴリー取得失敗");
   }
 });
 
+// ルート
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
+// サーバー起動
 app.listen(PORT, () => {
-  console.log(`Server running at http://localhost:${PORT}`);
+  console.log(`🚀 Server running at http://localhost:${PORT}`);
 });
