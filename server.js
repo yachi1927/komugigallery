@@ -119,9 +119,33 @@ app.post("/login", (req, res) => {
 });
 
 // 画像アップロード
+const { Readable } = require("stream");
+const { ObjectId } = require("mongodb");
+
+// Cloudinaryアップロード関数
+function uploadToCloudinary(file) {
+  return new Promise((resolve, reject) => {
+    const bufferStream = new Readable();
+    bufferStream.push(file.buffer);
+    bufferStream.push(null);
+
+    const stream = cloudinary.uploader.upload_stream(
+      { folder: "komugigallery" },
+      (error, result) => {
+        if (error) reject(error);
+        else resolve(result.secure_url);
+      }
+    );
+
+    bufferStream.pipe(stream);
+  });
+}
+
+// 画像アップロード処理
 app.post("/upload", upload.array("images", 10), async (req, res) => {
   try {
     const db = await connectDB();
+
     const tags = req.body.tags
       ? req.body.tags
           .split(",")
@@ -133,25 +157,9 @@ app.post("/upload", upload.array("images", 10), async (req, res) => {
       return res.status(400).send("画像が選択されていません");
     }
 
-    const uploadPromises = req.files.map((file) => {
-      return new Promise((resolve, reject) => {
-        const bufferStream = new Readable();
-        bufferStream.push(file.buffer);
-        bufferStream.push(null);
-
-        const stream = cloudinary.uploader.upload_stream(
-          { folder: "komugigallery" },
-          (error, result) => {
-            if (error) reject(error);
-            else resolve(result.secure_url);
-          }
-        );
-
-        bufferStream.pipe(stream);
-      });
-    });
-
-    const imageUrls = await Promise.all(uploadPromises);
+    const imageUrls = await Promise.all(
+      req.files.map((file) => uploadToCloudinary(file))
+    );
 
     const collection = db.collection("images");
     await collection.insertOne({
@@ -167,29 +175,29 @@ app.post("/upload", upload.array("images", 10), async (req, res) => {
   }
 });
 
+// Cloudinary削除関数
+function extractPublicId(url) {
+  const parts = url.split("/");
+  const publicIdWithExt = parts.slice(-2).join("/"); // komugigallery/abc.jpg
+  return publicIdWithExt.replace(/\.[^/.]+$/, ""); // 拡張子除去
+}
+
+// 削除処理
 app.delete("/delete/:id", async (req, res) => {
   try {
     const db = await connectDB();
     const collection = db.collection("images");
     const { id } = req.params;
 
-    // まずMongoDBから画像データを取得
     const doc = await collection.findOne({ _id: new ObjectId(id) });
     if (!doc) return res.status(404).send("画像が見つかりません");
 
-    // Cloudinaryから画像削除（複数画像対応）
     const deletePromises = doc.imageUrls.map((url) => {
-      // 公開IDを抽出（例： https://res.cloudinary.com/xxx/image/upload/v12345678/komugigallery/abc.jpg → komugigallery/abc）
-      const parts = url.split("/");
-      const publicIdWithExt = parts.slice(-2).join("/"); // komugigallery/abc.jpg
-      const publicId = publicIdWithExt.replace(/\.[^/.]+$/, ""); // 拡張子を除去
-
+      const publicId = extractPublicId(url);
       return cloudinary.uploader.destroy(publicId);
     });
 
     await Promise.all(deletePromises);
-
-    // MongoDBからドキュメント削除
     await collection.deleteOne({ _id: new ObjectId(id) });
 
     res.json({ success: true });
@@ -375,10 +383,17 @@ app.get("/tag-categories", async (req, res) => {
     const allDocs = await collection
       .find({}, { projection: { tags: 1 } })
       .toArray();
+
+    // 全タグを収集
     const allTagsSet = new Set();
-    allDocs.forEach((doc) => doc.tags.forEach((tag) => allTagsSet.add(tag)));
+    allDocs.forEach((doc) => {
+      if (Array.isArray(doc.tags)) {
+        doc.tags.forEach((tag) => allTagsSet.add(tag));
+      }
+    });
     const tagsArray = Array.from(allTagsSet);
 
+    // タグ分類ルール
     const categoryRules = {
       CP: ["akiz", "hiar", "szak", "kmkt"],
       Character: [
@@ -395,28 +410,49 @@ app.get("/tag-categories", async (req, res) => {
         "kiroro",
         "hironobu",
       ],
-      Date: tagsArray.filter(
-        (tag) => /\d{4}\/\d{2}/.test(tag) || /\d{4}年/.test(tag)
-      ),
     };
 
+    // カテゴリー化関数（Dateカテゴリ含む）
     function categorizeTags(tags, rules) {
       const categorized = {};
+
+      // 既存ルールのカテゴリ作成
       for (const category in rules) {
         categorized[category] = [];
       }
+
+      // Dateカテゴリを自動抽出
+      categorized["Date"] = tags.filter(
+        (tag) => /\d{4}\/\d{2}/.test(tag) || /\d{4}年/.test(tag)
+      );
+
+      // その他カテゴリ
       categorized["Other"] = [];
 
+      // 分類処理
       tags.forEach((tag) => {
         let found = false;
+
+        // CP, Character に属しているかチェック
         for (const category in rules) {
           if (rules[category].includes(tag)) {
-            categorized[category].push(tag);
+            if (!categorized[category].includes(tag)) {
+              categorized[category].push(tag);
+            }
             found = true;
             break;
           }
         }
-        if (!found) categorized["Other"].push(tag);
+
+        // Date にすでに入っていればスキップ
+        if (!found && categorized["Date"].includes(tag)) {
+          found = true;
+        }
+
+        // どこにも属さなければ Other
+        if (!found) {
+          categorized["Other"].push(tag);
+        }
       });
 
       return categorized;
