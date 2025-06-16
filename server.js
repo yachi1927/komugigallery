@@ -69,7 +69,10 @@ async function initAdminUser() {
   await initAdminUser();
 })();
 
-const currentUser = getUserFromToken();
+app.use((req, res, next) => {
+  req.currentUser = getUserFromToken(req);
+  next();
+});
 const isAdmin = currentUser?.isAdmin;
 
 const jwt = require("jsonwebtoken");
@@ -90,6 +93,18 @@ function getUserFromToken(req) {
   }
 }
 
+app.get("/some-protected-route", (req, res) => {
+  if (!req.currentUser) {
+    return res.status(401).send("認証が必要です");
+  }
+
+  if (req.currentUser.isAdmin) {
+    // 管理者向け処理
+  }
+
+  res.send("アクセス成功");
+});
+
 // MongoDB接続
 mongoose.connect("mongodb://localhost:27017/galleryApp");
 const Post = mongoose.model(
@@ -104,7 +119,6 @@ const Post = mongoose.model(
 
 app.use("/auth", authRoutes);
 app.use("/posts", postRoutes);
-
 
 // 仮のユーザーデータ
 const adminUsers = [
