@@ -1,21 +1,27 @@
+// server.js (ESモジュール形式)
+
+import dotenv from "dotenv";
 if (process.env.NODE_ENV !== "production") {
-  require("dotenv").config();
+  dotenv.config();
 }
 
-const express = require("express");
-const multer = require("multer");
-const { v2: cloudinary } = require("cloudinary");
-const path = require("path");
-const cors = require("cors");
-const { MongoClient, ObjectId } = require("mongodb");
+import express from "express";
+import multer from "multer";
+import { v2 as cloudinary } from "cloudinary";
+import path from "path";
+import cors from "cors";
+import { MongoClient, ObjectId } from "mongodb";
+import jwt from "jsonwebtoken";
+import { Readable } from "stream";
 
-const authRoutes = require("./routes/auth");
-const postRoutes = require("./routes/posts");
+// __dirname の代替（ESモジュールでは使えないため）
+import { fileURLToPath } from "url";
+import { dirname } from "path";
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-
-const mongoose = require("mongoose");
 
 app.use(express.json());
 
@@ -46,10 +52,21 @@ async function connectDB() {
   return dbInstance;
 }
 
+// 初期化などの非同期処理はトップレベルawaitでそのまま書ける（Node.js 14+）
+await (async () => {
+  const db = await connectDB();
+  await db.collection("users").updateOne(
+    { username: "admin" },
+    { $set: { isAdmin: true } },
+    { upsert: true }
+  );
+})();
+
 app.use(cors());
 app.use(express.static(path.join(__dirname, "public")));
-app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// ここから続きます...
 
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
