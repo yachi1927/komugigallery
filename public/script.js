@@ -201,6 +201,38 @@ async function loadCarousel() {
   }
 }
 
+  const loginBtn = document.getElementById("admin-login-btn");
+  const loginMsg = document.getElementById("login-message");
+
+  loginBtn.addEventListener("click", async () => {
+    const username = document.getElementById("admin-username").value;
+    const password = document.getElementById("admin-password").value;
+
+    try {
+      const res = await fetch("/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
+      });
+
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text || "ログインに失敗しました");
+      }
+
+      const json = await res.json(); // { token: "..." }
+      localStorage.setItem("token", json.token);
+      loginMsg.textContent = "ログイン成功";
+      loginMsg.style.color = "green";
+
+      location.reload(); // ページ再読み込みして管理者権限を反映
+    } catch (e) {
+      loginMsg.textContent = e.message;
+      loginMsg.style.color = "red";
+    }
+  });
+
+
 // ページ初期読み込み
 loadTags();
 loadGallery();

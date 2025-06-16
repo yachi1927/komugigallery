@@ -62,6 +62,23 @@ const upload = multer({ storage });
 // MongoDB shellまたはMongooseで
 db.users.updateOne({ username: "admin" }, { $set: { isAdmin: true } });
 
+localStorage.setItem("token", token);
+
+function getUserFromToken() {
+  const token = localStorage.getItem("token");
+  if (!token) return null;
+
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1])); // JWTの中身
+    return payload; // { id, username, isAdmin }
+  } catch (e) {
+    return null;
+  }
+}
+
+const currentUser = getUserFromToken();
+const isAdmin = currentUser?.isAdmin;
+
 // MongoDB接続
 mongoose.connect("mongodb://localhost:27017/galleryApp");
 const Post = mongoose.model(
@@ -78,6 +95,33 @@ app.use("/auth", authRoutes);
 app.use("/posts", postRoutes);
 
 app.listen(3000, () => console.log("Server running on port 3000"));
+
+const jwt = require("jsonwebtoken");
+const SECRET_KEY = process.env.JWT_SECRET || "your-secret";
+
+// 仮のユーザーデータ
+const adminUsers = [
+  { username: "admin", password: "password123", isAdmin: true },
+];
+
+app.post("/login", (req, res) => {
+  const { username, password } = req.body;
+  const user = adminUsers.find(
+    (u) => u.username === username && u.password === password
+  );
+
+  if (!user) {
+    return res.status(401).send("ユーザー名またはパスワードが違います");
+  }
+
+  const token = jwt.sign(
+    { id: user.username, isAdmin: user.isAdmin },
+    SECRET_KEY,
+    { expiresIn: "1d" }
+  );
+
+  res.json({ token });
+});
 
 // 画像アップロード
 app.post("/upload", upload.array("images", 10), async (req, res) => {
