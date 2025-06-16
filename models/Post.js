@@ -1,9 +1,14 @@
-const mongoose = require("mongoose");
+// models/Post.js
+import mongoose from "mongoose";
 
 const postSchema = new mongoose.Schema({
   imageUrls: [String],
+  imagePublicIds: [String],
   tags: [String],
-  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+  createdAt: { type: Date, default: Date.now },
+  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" }, // 投稿者ID
 });
 
-module.exports = mongoose.model("Post", postSchema);
+const Post = mongoose.model("Post", postSchema);
+
+export default Post;
