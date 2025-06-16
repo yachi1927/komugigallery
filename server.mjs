@@ -13,6 +13,7 @@ import { fileURLToPath } from "url";
 import cloudinary from "cloudinary";
 import User from "./models/User.js";
 import Post from "./models/Post.js";
+import bcrypt from "bcrypt";
 
 // __dirnameを使うための準備 (ESM用)
 const __filename = fileURLToPath(import.meta.url);
