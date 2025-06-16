@@ -199,7 +199,11 @@ app.delete("/posts/:id", requireAdmin, async (req, res) => {
   }
 });
 
+const publicId = extractPublicId(url);
+
 console.log("Deleting publicId:", publicId);
+
+await cloudinary.v2.uploader.destroy(publicId);
 
 // 投稿削除API（Mongoose Postモデル） → ここが新規追加のDELETE /posts/:id
 app.delete("/posts/:id", requireAdmin, async (req, res) => {
