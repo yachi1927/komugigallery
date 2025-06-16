@@ -1,8 +1,16 @@
+import dotenv from "dotenv";
+dotenv.config();
+
 import mongoose from "mongoose";
 import bcrypt from "bcrypt";
-import User from "./models/User.js"; // UserモデルをESMでimport
+import User from "./models/User.js";
 
 async function createAdminUser() {
+  console.log("MONGODB_URI:", process.env.MONGODB_URI);
+  if (!process.env.MONGODB_URI) {
+    throw new Error("MONGODB_URI is not defined");
+  }
+
   await mongoose.connect(process.env.MONGODB_URI);
 
   const existingAdmin = await User.findOne({ username: "admin" });
