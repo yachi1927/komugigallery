@@ -1,8 +1,4 @@
 // server.js (ESモジュール形式)
-
-app.use("/auth", authRoutes);
-app.use("/posts", postRoutes);
-
 import authRoutes from "./routes/auth.js";
 import postRoutes from "./routes/posts.js";
 import express from "express";
@@ -25,6 +21,10 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+app.use("/auth", authRoutes);
+app.use("/posts", postRoutes);
+
 
 async function main() {
   // MongoClientとDBインスタンス
