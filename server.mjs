@@ -126,19 +126,21 @@ await initAdminUser();
 // 仮ユーザーログイン（簡易版）
 const adminUsers = [{ username: "admin", password: "admin123", isAdmin: true }];
 
-app.post("/login", (req, res) => {
+app.post("/login", async (req, res) => {
   const { username, password } = req.body;
-  const user = adminUsers.find(
-    (u) => u.username === username && u.password === password
-  );
-  if (!user)
+  const user = await User.findOne({ username });
+  if (!user) {
     return res.status(401).send("ユーザー名またはパスワードが違います");
+  }
 
-  const token = jwt.sign(
-    { id: user.username, isAdmin: user.isAdmin },
-    SECRET_KEY,
-    { expiresIn: "1d" }
-  );
+  const match = await bcrypt.compare(password, user.password);
+  if (!match) {
+    return res.status(401).send("ユーザー名またはパスワードが違います");
+  }
+
+  const token = jwt.sign({ id: user._id, isAdmin: user.isAdmin }, SECRET_KEY, {
+    expiresIn: "1d",
+  });
   res.json({ token });
 });
 
@@ -324,16 +326,13 @@ app.get("/tag-categories", async (req, res) => {
   try {
     const db = await connectDB();
     // 例: カテゴリ別にタグを分類する処理（実際のカテゴリルールに応じて調整）
-    const allTags = await db
-      .collection("images")
-      .distinct("tags");
+    const allTags = await db.collection("images").distinct("tags");
     // カテゴリ分けは仮置き例
     const categories = {
       color: allTags.filter((t) => ["red", "blue", "green"].includes(t)),
       animals: allTags.filter((t) => ["cat", "dog", "bird"].includes(t)),
       others: allTags.filter(
-        (t) =>
-          !["red", "blue", "green", "cat", "dog", "bird"].includes(t)
+        (t) => !["red", "blue", "green", "cat", "dog", "bird"].includes(t)
       ),
     };
     res.json(categories);
