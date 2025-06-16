@@ -33,3 +33,10 @@ const token = jwt.sign(
   JWT_SECRET,
   { expiresIn: "1d" }
 );
+
+// 例: ログイン処理
+const user = await User.findOne({ username: req.body.username });
+if (!user) {
+  return res.status(401).send("ユーザーが見つかりません");
+}
+// ここで user を使ってるから、定義は必要
