@@ -11,8 +11,8 @@ import path from "path";
 import dotenv from "dotenv";
 import { fileURLToPath } from "url";
 import cloudinary from "cloudinary";
-import User from "models/User.js";
-import Post from "models/Post.js";
+import User from "../models/User.js";
+import Post from "../models/Post.js";
 
 
 // __dirnameを使うための準備 (ESM用)
