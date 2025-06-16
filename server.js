@@ -119,7 +119,6 @@ app.post("/login", (req, res) => {
 
 // 画像アップロード
 const { Readable } = require("stream");
-const { ObjectId } = require("mongodb");
 
 // Cloudinaryアップロード関数
 function uploadToCloudinary(file) {
