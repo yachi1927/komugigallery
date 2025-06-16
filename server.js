@@ -72,6 +72,24 @@ async function initAdminUser() {
 const currentUser = getUserFromToken();
 const isAdmin = currentUser?.isAdmin;
 
+const jwt = require("jsonwebtoken");
+const SECRET_KEY = process.env.JWT_SECRET || "your-secret";
+
+function getUserFromToken(req) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader) return null;
+
+  const token = authHeader.split(" ")[1]; // "Bearer <token>" 形式の場合
+  if (!token) return null;
+
+  try {
+    const payload = jwt.verify(token, SECRET_KEY);
+    return payload; // { id, username, isAdmin }
+  } catch {
+    return null;
+  }
+}
+
 // MongoDB接続
 mongoose.connect("mongodb://localhost:27017/galleryApp");
 const Post = mongoose.model(
@@ -87,8 +105,6 @@ const Post = mongoose.model(
 app.use("/auth", authRoutes);
 app.use("/posts", postRoutes);
 
-const jwt = require("jsonwebtoken");
-const SECRET_KEY = process.env.JWT_SECRET || "your-secret";
 
 // 仮のユーザーデータ
 const adminUsers = [
