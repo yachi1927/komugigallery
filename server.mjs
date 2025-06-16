@@ -1,6 +1,6 @@
 // server.js (ESモジュール形式)
 import authRoutes from "./routes/auth.mjs";
-import postRoutes from "./routes/posts.js";
+import postRoutes from "./routes/posts.mjs";
 import express from "express";
 import multer from "multer";
 import mongoose from "mongoose";
