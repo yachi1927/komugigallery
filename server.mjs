@@ -108,9 +108,11 @@ function uploadToCloudinary(file) {
 
 // Cloudinary public ID抽出
 function extractPublicId(url) {
+  // URLの最後のスラッシュ以降を取得し、拡張子を除去する例
   const parts = url.split("/");
-  const publicIdWithExt = parts.slice(-2).join("/");
-  return publicIdWithExt.replace(/\.[^/.]+$/, "");
+  const fileName = parts.pop().split(".")[0];
+  const folder = parts.slice(parts.indexOf("upload") + 1).join("/");
+  return folder ? `${folder}/${fileName}` : fileName;
 }
 
 // 管理者初期化（MongoDB側でアップサート）
@@ -181,9 +183,13 @@ app.delete("/posts/:id", requireAdmin, async (req, res) => {
 
     // Cloudinary画像削除（imagePublicIds が Cloudinary ID の配列）
     await Promise.all(
-      post.imagePublicIds.map((id) => cloudinary.v2.uploader.destroy(id))
+      doc.imageUrls.map((url) => {
+        const publicId = extractPublicId(url);
+        if (!publicId)
+          throw new Error("Invalid publicId extracted from url: " + url);
+        return cloudinary.v2.uploader.destroy(publicId);
+      })
     );
-
     await Post.findByIdAndDelete(req.params.id);
 
     res.json({ success: true, message: "投稿を削除しました" });
@@ -192,6 +198,8 @@ app.delete("/posts/:id", requireAdmin, async (req, res) => {
     res.status(500).send("削除に失敗しました");
   }
 });
+
+console.log("Deleting publicId:", publicId);
 
 // 投稿削除API（Mongoose Postモデル） → ここが新規追加のDELETE /posts/:id
 app.delete("/posts/:id", requireAdmin, async (req, res) => {
