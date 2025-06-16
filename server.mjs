@@ -124,7 +124,7 @@ async function initAdminUser() {
 await initAdminUser();
 
 // 仮ユーザーログイン（簡易版）
-const adminUsers = [{ username: "admin", password: "password123", isAdmin: true }];
+const adminUsers = [{ username: "admin", password: "admin123", isAdmin: true }];
 
 app.post("/login", (req, res) => {
   const { username, password } = req.body;
