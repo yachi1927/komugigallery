@@ -58,7 +58,16 @@ const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
 // MongoDB shellまたはMongooseで
-db.users.updateOne({ username: "admin" }, { $set: { isAdmin: true } });
+async function initAdminUser() {
+  const db = await connectDB();
+  await db.collection("users").updateOne(
+    { username: "admin" },
+    { $set: { isAdmin: true } },
+    { upsert: true } // adminが無ければ作る
+  );
+}
+
+initAdminUser(); // 起動時に呼び出す
 
 function getUserFromToken() {
   const token = localStorage.getItem("token");
