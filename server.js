@@ -10,8 +10,19 @@ const path = require("path");
 const cors = require("cors");
 const { MongoClient, ObjectId } = require("mongodb");
 
+const authRoutes = require("./routes/auth");
+const postRoutes = require("./routes/posts");
+
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+const mongoose = require("mongoose");
+const dotenv = require("dotenv");
+const { v2: cloudinary } = require("cloudinary");
+
+dotenv.config();
+
+app.use(express.json());
 
 // Cloudinary設定
 cloudinary.config({
@@ -47,6 +58,26 @@ app.use(express.urlencoded({ extended: true }));
 
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
+
+// MongoDB shellまたはMongooseで
+db.users.updateOne({ username: "admin" }, { $set: { isAdmin: true } });
+
+// MongoDB接続
+mongoose.connect("mongodb://localhost:27017/galleryApp");
+const Post = mongoose.model(
+  "Post",
+  new mongoose.Schema({
+    imageUrls: [String],
+    imagePublicIds: [String],
+    tags: [String],
+    createdAt: { type: Date, default: Date.now },
+  })
+);
+
+app.use("/auth", authRoutes);
+app.use("/posts", postRoutes);
+
+app.listen(3000, () => console.log("Server running on port 3000"));
 
 // 画像アップロード
 app.post("/upload", upload.array("images", 10), async (req, res) => {
@@ -127,6 +158,41 @@ app.delete("/delete/:id", async (req, res) => {
     console.error("削除失敗:", error);
     res.status(500).send("削除に失敗しました");
   }
+});
+
+// 削除API
+app.post("/delete-post", async (req, res) => {
+  const { id, password } = req.body;
+
+  if (password !== process.env.ADMIN_PASSWORD) {
+    return res.status(403).send("パスワードが違います");
+  }
+
+  try {
+    const post = await Post.findById(id);
+    if (!post) return res.status(404).send("対象の投稿が見つかりません");
+
+    // Cloudinaryから画像削除
+    if (post.imagePublicIds && post.imagePublicIds.length > 0) {
+      await Promise.all(
+        post.imagePublicIds.map((publicId) =>
+          cloudinary.uploader.destroy(publicId)
+        )
+      );
+    }
+
+    // DBから削除
+    await Post.findByIdAndDelete(id);
+
+    res.send("削除完了しました");
+  } catch (err) {
+    console.error("削除エラー:", err);
+    res.status(500).send("サーバーエラーで削除できませんでした");
+  }
+});
+
+app.listen(3000, () => {
+  console.log("Server running on http://localhost:3000");
 });
 
 // 修正済み ギャラリーデータ取得（タグ絞り込み対応）
@@ -279,7 +345,7 @@ app.get("/tag-categories", async (req, res) => {
     const tagsArray = Array.from(allTagsSet);
 
     const categoryRules = {
-      CP: ["akiz", "hiar", "szak", "kmkt",],
+      CP: ["akiz", "hiar", "szak", "kmkt"],
       Character: [
         "izumi",
         "akiyoshi",

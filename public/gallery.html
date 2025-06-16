@@ -135,7 +135,6 @@
       }
 
       // 画像をカード形式で表示、クリックでモーダルを開く
-      // 【縦3点リーダーボタンも追加】
       function displayImages(posts) {
         const gallery = document.getElementById("gallery");
         gallery.innerHTML = "";
@@ -157,18 +156,54 @@
             openModal(post.imageUrls);
           });
 
-          // 縦3点リーダーボタン作成
+          // 3点リーダーボタン（タグ編集用）
           const menuBtn = document.createElement("button");
           menuBtn.className = "menu-btn";
           menuBtn.textContent = "︙";
-          // クリックイベント（画像クリックイベントに影響しないようstopPropagation）
           menuBtn.addEventListener("click", (e) => {
             e.stopPropagation();
             openTagEditor(post);
           });
 
+          // 削除ボタンを作成
+          const deleteBtn = document.createElement("button");
+          deleteBtn.className = "delete-btn";
+          deleteBtn.textContent = "削除";
+          deleteBtn.style.marginLeft = "8px";
+
+          deleteBtn.addEventListener("click", async (e) => {
+            e.stopPropagation();
+
+            const password = prompt(
+              "削除するにはパスワードを入力してください。"
+            );
+            if (password === null) return; // キャンセル時
+
+            // ここは実際はAPIの仕様に合わせて変更してください
+            try {
+              const res = await fetch("/delete-post", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ id: post.id, password }),
+              });
+
+              if (!res.ok) {
+                const text = await res.text();
+                throw new Error(text || "削除に失敗しました");
+              }
+
+              alert("削除しました");
+              loadGallery(currentPage); // 再読み込み
+            } catch (error) {
+              alert("削除失敗: " + error.message);
+            }
+          });
+
           card.appendChild(img);
           card.appendChild(menuBtn);
+          card.appendChild(deleteBtn);
           gallery.appendChild(card);
         });
       }
