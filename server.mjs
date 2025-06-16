@@ -44,15 +44,15 @@ async function main() {
 
   // Mongoose接続とモデル
   await mongoose.connect(process.env.MONGODB_URI);
-  const Post = mongoose.model(
-    "Post",
-    new mongoose.Schema({
-      imageUrls: [String],
-      imagePublicIds: [String],
-      tags: [String],
-      createdAt: { type: Date, default: Date.now },
-    })
-  );
+const Post = mongoose.models.Post || mongoose.model(
+  "Post",
+  new mongoose.Schema({
+    imageUrls: [String],
+    imagePublicIds: [String],
+    tags: [String],
+    createdAt: { type: Date, default: Date.now },
+  })
+);
 
   // Multer設定
   const storage = multer.memoryStorage();
