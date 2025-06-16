@@ -232,6 +232,19 @@ async function loadCarousel() {
     }
   });
 
+  function getUserFromToken() {
+    const token = localStorage.getItem("token");
+    if (!token) return null;
+  
+    try {
+      const payload = JSON.parse(atob(token.split(".")[1])); // JWTの中身
+      return payload; // { id, username, isAdmin }
+    } catch (e) {
+      return null;
+    }
+  }
+  
+
 
 // ページ初期読み込み
 loadTags();

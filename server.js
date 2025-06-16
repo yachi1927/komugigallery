@@ -16,9 +16,6 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 const mongoose = require("mongoose");
-const dotenv = require("dotenv");
-
-dotenv.config();
 
 app.use(express.json());
 
@@ -69,17 +66,6 @@ async function initAdminUser() {
 
 initAdminUser(); // 起動時に呼び出す
 
-function getUserFromToken() {
-  const token = localStorage.getItem("token");
-  if (!token) return null;
-
-  try {
-    const payload = JSON.parse(atob(token.split(".")[1])); // JWTの中身
-    return payload; // { id, username, isAdmin }
-  } catch (e) {
-    return null;
-  }
-}
 
 const currentUser = getUserFromToken();
 const isAdmin = currentUser?.isAdmin;
