@@ -168,57 +168,59 @@
             openTagEditor(post);
           });
 
-// 削除ボタンを作成（管理者のみ）
-let deleteBtn = null;
-if (isAdmin) {
-  deleteBtn = document.createElement("button");
-  deleteBtn.className = "delete-btn";
-  deleteBtn.textContent = "🗑";
+          // 削除ボタンを作成（管理者のみ）
+          let deleteBtn = null;
+          if (isAdmin) {
+            deleteBtn = document.createElement("button");
+            deleteBtn.className = "delete-btn";
+            deleteBtn.textContent = "🗑";
 
-  deleteBtn.addEventListener("click", async (e) => {
-    e.stopPropagation();
+            deleteBtn.addEventListener("click", async (e) => {
+              e.stopPropagation();
 
-    if (!post.id) {
-      alert("投稿IDが不正です");
-      return;
-    }
+              if (!post.id) {
+                alert("投稿IDが不正です");
+                return;
+              }
 
-    if (confirm("この投稿を削除しますか？")) {
-      try {
-        const token = localStorage.getItem("token");
-        if (!token) {
-          alert("ログインが必要です");
-          return;
-        }
+              if (confirm("この投稿を削除しますか？")) {
+                try {
+                  const token = localStorage.getItem("token");
+                  if (!token) {
+                    alert("ログインが必要です");
+                    return;
+                  }
 
-        const res = await fetch(`/posts/${post.id}`, {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+                  const res = await fetch(`/delete-post`, {
+                    method: "POST",
+                    headers: {
+                      "Content-Type": "application/json",
+                      Authorization: `Bearer ${token}`,
+                    },
+                    body: JSON.stringify({ id: post.id }),
+                  });
 
-        if (!res.ok) {
-          // APIがjsonでエラーメッセージを返している場合に備え
-          let errorMsg = await res.text();
-          try {
-            const json = JSON.parse(errorMsg);
-            if (json.error) errorMsg = json.error;
-          } catch {
-            // JSONじゃなければそのままtextを使う
+                  if (!res.ok) {
+                    // APIがjsonでエラーメッセージを返している場合に備え
+                    let errorMsg = await res.text();
+                    try {
+                      const json = JSON.parse(errorMsg);
+                      if (json.error) errorMsg = json.error;
+                    } catch {
+                      // JSONじゃなければそのままtextを使う
+                    }
+                    throw new Error(errorMsg || "削除に失敗しました");
+                  }
+
+                  alert("削除しました");
+                  // 削除後に最新の投稿一覧を取得して画面更新
+                  await loadGallery(currentPage);
+                } catch (err) {
+                  alert(err.message);
+                }
+              }
+            });
           }
-          throw new Error(errorMsg || "削除に失敗しました");
-        }
-
-        alert("削除しました");
-        // 削除後に最新の投稿一覧を取得して画面更新
-        await loadGallery(currentPage);
-      } catch (err) {
-        alert(err.message);
-      }
-    }
-  });
-}
 
           // cardに要素を追加
           card.appendChild(img);
