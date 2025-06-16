@@ -532,6 +532,12 @@ button:hover {
 }
 
 /* style.css に追加 */
+
+#admin-login{
+  display: flex;
+  justify-content: center;
+}
+
 .login-box {
   margin: 1rem;
   padding: 1rem;
