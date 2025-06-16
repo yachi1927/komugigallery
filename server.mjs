@@ -10,7 +10,6 @@ import dotenv from "dotenv";
 import { fileURLToPath } from "url";
 import cloudinary from "cloudinary";
 
-app.use(express.static(path.join(__dirname, "public")));
 
 // __dirnameを使うための準備 (ESM用)
 const __filename = fileURLToPath(import.meta.url);
@@ -21,6 +20,8 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+app.use(express.static(path.join(__dirname, "public")));
 
 // MongoDBの接続設定（MongoClient & Mongoose両方使用）
 const client = new MongoClient(process.env.MONGODB_URI);
