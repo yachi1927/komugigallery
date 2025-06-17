@@ -188,7 +188,7 @@ app.delete("/posts/:id", async (req, res) => {
 
     const post = await db
       .collection("images")
-      .findOne({ _id: new ObjectId(postId) });
+      .findOne({ _id: new ObjectId(id) });
     if (!post) return res.status(404).json({ error: "投稿が見つかりません" });
 
     // Cloudinary画像削除
@@ -201,7 +201,7 @@ app.delete("/posts/:id", async (req, res) => {
     }
 
     // MongoDBから削除
-    await db.collection("images").deleteOne({ _id: new ObjectId(postId) });
+    await db.collection("images").deleteOne({ _id: new ObjectId(id) });
 
     res.json({ message: "投稿を削除しました" });
   } catch (err) {
