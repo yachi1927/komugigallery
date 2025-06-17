@@ -10,7 +10,6 @@ import dotenv from "dotenv";
 import { fileURLToPath } from "url";
 import cloudinary from "cloudinary";
 
-
 // __dirnameを使うための準備 (ESM用)
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -123,7 +122,9 @@ async function initAdminUser() {
 await initAdminUser();
 
 // 仮ユーザーログイン用データ（実運用ではDB参照に変更推奨）
-const adminUsers = [{ username: "admin", password: "password123", isAdmin: true }];
+const adminUsers = [
+  { username: "admin", password: "password123", isAdmin: true },
+];
 
 // --- ルート ---
 // ログイン
@@ -179,29 +180,33 @@ app.post("/upload", upload.array("images", 10), async (req, res) => {
   }
 });
 
-// 画像削除（MongoClient利用）
-app.delete("/delete/:id", async (req, res) => {
+// 投稿削除
+app.delete("/posts/:id", async (req, res) => {
   try {
     const db = await connectDB();
-    const doc = await db
+    const postId = req.params.id;
+
+    const post = await db
       .collection("images")
-      .findOne({ _id: new ObjectId(req.params.id) });
-    if (!doc) return res.status(404).send("画像が見つかりません");
+      .findOne({ _id: new ObjectId(postId) });
+    if (!post) return res.status(404).json({ error: "投稿が見つかりません" });
 
-    // Cloudinaryの画像削除
-    await Promise.all(
-      doc.imagePublicIds.map((publicId) =>
-        cloudinary.v2.uploader.destroy(publicId)
-      )
-    );
+    // Cloudinary画像削除
+    if (Array.isArray(post.imagePublicIds)) {
+      await Promise.all(
+        post.imagePublicIds.map((publicId) =>
+          cloudinary.v2.uploader.destroy(publicId)
+        )
+      );
+    }
 
-    // DBから削除
-    await db.collection("images").deleteOne({ _id: new ObjectId(req.params.id) });
+    // MongoDBから削除
+    await db.collection("images").deleteOne({ _id: new ObjectId(postId) });
 
-    res.json({ success: true });
+    res.json({ message: "投稿を削除しました" });
   } catch (err) {
-    console.error("削除失敗:", err);
-    res.status(500).send("削除に失敗しました");
+    console.error("削除エラー:", err);
+    res.status(500).json({ error: "削除に失敗しました" });
   }
 });
 
@@ -275,12 +280,18 @@ app.get("/tags", async (req, res) => {
       .collection("images")
       .find({}, { projection: { tags: 1 } })
       .toArray();
+
     const tagSet = new Set();
-    docs.forEach((doc) => doc.tags?.forEach((tag) => tagSet.add(tag)));
+    docs.forEach((doc) => {
+      if (Array.isArray(doc.tags)) {
+        doc.tags.forEach((tag) => tagSet.add(tag));
+      }
+    });
+
     res.json([...tagSet]);
   } catch (err) {
-    console.error(err);
-    res.status(500).send("タグ取得失敗");
+    console.error("タグ取得エラー:", err);
+    res.status(500).json({ error: "タグの取得に失敗しました" });
   }
 });
 
@@ -317,26 +328,26 @@ app.post("/update-tags", async (req, res) => {
   try {
     const db = await connectDB();
     const { id, tags } = req.body;
-    if (!id || !tags) return res.status(400).send("IDとタグが必要です");
 
-    const updated = await db.collection("images").updateOne(
-      { _id: new ObjectId(id) },
-      {
-        $set: {
-          tags: tags
-            .split(",")
-            .map((t) => t.trim())
-            .filter(Boolean),
-        },
-      }
-    );
+    if (!id || typeof tags !== "string")
+      return res.status(400).json({ error: "IDとタグ文字列が必要です" });
 
-    if (updated.matchedCount === 0)
-      return res.status(404).send("投稿が見つかりません");
-    res.json({ success: true });
+    const tagArray = tags
+      .split(",")
+      .map((t) => t.trim())
+      .filter(Boolean);
+
+    const result = await db
+      .collection("images")
+      .updateOne({ _id: new ObjectId(id) }, { $set: { tags: tagArray } });
+
+    if (result.matchedCount === 0)
+      return res.status(404).json({ error: "該当投稿が見つかりません" });
+
+    res.json({ message: "タグを更新しました", tags: tagArray });
   } catch (err) {
-    console.error(err);
-    res.status(500).send("タグ更新失敗");
+    console.error("タグ更新エラー:", err);
+    res.status(500).json({ error: "タグの更新に失敗しました" });
   }
 });
 
