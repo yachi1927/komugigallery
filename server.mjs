@@ -122,9 +122,7 @@ async function initAdminUser() {
 await initAdminUser();
 
 // 仮ユーザーログイン用データ（実運用ではDB参照に変更推奨）
-const adminUsers = [
-  { username: "admin", password: "admin123", isAdmin: true },
-];
+const adminUsers = [{ username: "admin", password: "admin123", isAdmin: true }];
 
 // --- ルート ---
 // ログイン
@@ -329,13 +327,12 @@ app.post("/update-tags", async (req, res) => {
     const db = await connectDB();
     const { id, tags } = req.body;
 
-    if (!id || typeof tags !== "string")
-      return res.status(400).json({ error: "IDとタグ文字列が必要です" });
+    // ✅ 配列であることを確認
+    if (!id || !Array.isArray(tags))
+      return res.status(400).json({ error: "IDとタグ配列が必要です" });
 
-    const tagArray = tags
-      .split(",")
-      .map((t) => t.trim())
-      .filter(Boolean);
+    // ✅ 不正な文字列や空白を除去
+    const tagArray = tags.map((t) => t.trim()).filter(Boolean);
 
     const result = await db
       .collection("images")
