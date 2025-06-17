@@ -179,7 +179,7 @@
             deleteBtn.addEventListener("click", async (e) => {
               e.stopPropagation();
 
-              if (!post._id) {
+              if (!post.id) {
                 alert("投稿IDが不正です");
                 return;
               }
@@ -192,7 +192,7 @@
                     return;
                   }
 
-                  const res = await fetch(`/posts/${post._id}`, {
+                  const res = await fetch(`/posts/${post.id}`, {
                     method: "DELETE",
                     headers: {
                       Authorization: `Bearer ${token}`,

@@ -184,7 +184,7 @@ app.post("/upload", upload.array("images", 10), async (req, res) => {
 app.delete("/posts/:id", async (req, res) => {
   try {
     const db = await connectDB();
-    const postId = req.params.id;
+    const id = req.params.id;
 
     const post = await db
       .collection("images")
