@@ -123,7 +123,7 @@ await initAdminUser();
 
 // 仮ユーザーログイン用データ（実運用ではDB参照に変更推奨）
 const adminUsers = [
-  { username: "admin", password: "password123", isAdmin: true },
+  { username: "admin", password: "admin123", isAdmin: true },
 ];
 
 // --- ルート ---
