@@ -191,7 +191,7 @@
                     return;
                   }
 
-                  const res = await fetch(`/posts/${postId}`, {
+                  const res = await fetch(`/posts/${post.Id}`, {
                     method: "DELETE",
                   })
                     .then((res) => res.json())
@@ -368,7 +368,7 @@
           const res = await fetch("/update-tags", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ id: postId, tags: tagString }),
+            body: JSON.stringify({ id: editingPost.id, tags: newTags }),
           })
             .then((res) => res.json())
             .then((data) => {
