@@ -360,7 +360,7 @@ app.get("/tag-categories", async (req, res) => {
     docs.forEach((doc) => doc.tags?.forEach((tag) => allTags.add(tag)));
 
     const categoryRules = {
-      CP: ["akiz", "hiar", "szak", "kmkt"],
+      CP: ["akiz", "hiar", "szak", "kmkt","tkao","riny","hrkn"],
       Character: [
         "izumi",
         "akiyoshi",
@@ -380,6 +380,20 @@ app.get("/tag-categories", async (req, res) => {
         "hainekochan",
         "toranekochan",
         "yoshihisa",
+        "yukari",
+        "sasara",
+        "rosho",
+        "gunjyo",
+        "kinawara",
+        "yomogi",
+        "angel",
+        "dekanekochan",
+        "inuchan",
+        "ichiro",
+        "jiro",
+        "saburo",
+        "takumi",
+        "aoi",
       ],
     };
 
