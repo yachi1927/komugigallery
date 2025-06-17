@@ -169,6 +169,8 @@
           });
 
           // 削除ボタンを作成（管理者のみ）
+          let deleteBtn = null;
+
           deleteBtn.addEventListener("click", async (e) => {
             e.stopPropagation();
 
@@ -205,6 +207,8 @@
               }
             }
           });
+
+          if (deleteBtn) card.appendChild(deleteBtn);
 
           // cardに要素を追加
           card.appendChild(img);
