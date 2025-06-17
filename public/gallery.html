@@ -360,22 +360,17 @@
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ id: editingPost.id, tags: newTags }),
-          })
-            .then((res) => res.json())
-            .then((data) => {
-              alert("タグを更新しました");
-              location.reload();
-            });
+          });
+
+          const data = await res.json();
 
           if (!res.ok) {
-            const text = await res.text();
-            throw new Error(text || "タグ更新に失敗しました");
+            throw new Error(data.error || "タグ更新に失敗しました");
           }
 
-          editingPost.tags = newTags; // ローカル更新
           alert("タグを更新しました: " + newTags.join(", "));
           closeTagEditor();
-          loadGallery(currentPage); // UIを再読み込み
+          await loadGallery(currentPage);
         } catch (error) {
           alert(error.message);
         }
