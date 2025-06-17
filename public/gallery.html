@@ -170,45 +170,48 @@
 
           // 削除ボタンを作成（管理者のみ）
           let deleteBtn = null;
+          if (isAdmin) {
+            deleteBtn = document.createElement("button");
+            deleteBtn.className = "delete-btn";
+            deleteBtn.textContent = "🗑";
 
-          deleteBtn.addEventListener("click", async (e) => {
-            e.stopPropagation();
+            deleteBtn.addEventListener("click", async (e) => {
+              e.stopPropagation();
 
-            if (!post._id) {
-              alert("投稿IDが不正です");
-              return;
-            }
-
-            if (confirm("この投稿を削除しますか？")) {
-              try {
-                const token = localStorage.getItem("token");
-                if (!token) {
-                  alert("ログインが必要です");
-                  return;
-                }
-
-                const res = await fetch(`/posts/${post._id}`, {
-                  method: "DELETE",
-                  headers: {
-                    Authorization: `Bearer ${token}`,
-                  },
-                });
-
-                const data = await res.json();
-
-                if (!res.ok) {
-                  throw new Error(data.error || "削除に失敗しました");
-                }
-
-                alert(data.message || "削除しました");
-                await loadGallery(currentPage); // 最新のギャラリーを読み直す
-              } catch (err) {
-                alert(err.message);
+              if (!post._id) {
+                alert("投稿IDが不正です");
+                return;
               }
-            }
-          });
 
-          if (deleteBtn) card.appendChild(deleteBtn);
+              if (confirm("この投稿を削除しますか？")) {
+                try {
+                  const token = localStorage.getItem("token");
+                  if (!token) {
+                    alert("ログインが必要です");
+                    return;
+                  }
+
+                  const res = await fetch(`/posts/${post._id}`, {
+                    method: "DELETE",
+                    headers: {
+                      Authorization: `Bearer ${token}`,
+                    },
+                  });
+
+                  const data = await res.json();
+
+                  if (!res.ok) {
+                    throw new Error(data.error || "削除に失敗しました");
+                  }
+
+                  alert(data.message || "削除しました");
+                  await loadGallery(currentPage); // 最新のギャラリーを読み直す
+                } catch (err) {
+                  alert(err.message);
+                }
+              }
+            });
+          }
 
           // cardに要素を追加
           card.appendChild(img);
